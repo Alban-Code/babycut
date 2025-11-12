@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<?import javafx.scene.media.MediaView?>
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="io.onelioh.controller.AppController"
+            >
+    <top>
+        <ToolBar>
+            <Button text="Importer" fx:id="importBtn"/>
+        </ToolBar>
+    </top>
+    <center>
+        <StackPane fx:id="centerPane" style="-fx-background-color: black;">
+            <MediaView fx:id="mediaView" />
+        </StackPane>
+    </center>
+    <bottom>
+        <VBox spacing="6" style="-fx-padding: 8;">
+
+
+            <HBox>
+                <Button text="▶" fx:id="playBtn"/>
+                <Button text="⏸" fx:id="pauseBtn"/>
+                <Button text="⏹" fx:id="stopBtn"/>
+                <Slider fx:id="timeSlider" HBox.hgrow="ALWAYS"/>
+                <Label fx:id="timeLabel" text="00:00 / 00:00"/>
+            </HBox>
+
+            <TitledPane text="Pistes détectées">
+                <SplitPane>
+                    <VBox spacing="4" style="-fx-padding: 4;">
+                        <Label text="Vidéo" />
+                        <ListView fx:id="videoStreams" />
+                    </VBox>
+                    <VBox spacing="4" style="-fx-padding: 4;">
+                        <Label text="Audio" />
+                        <ListView fx:id="audioStreams" />
+                    </VBox>
+                </SplitPane>
+            </TitledPane>
+        </VBox>
+    </bottom>
+
+</BorderPane>
