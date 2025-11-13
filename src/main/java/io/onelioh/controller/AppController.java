@@ -9,6 +9,8 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaException;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
@@ -32,8 +34,11 @@ public class AppController {
 
     private Pane videoTrackPane;
     private Pane audioTrackPane;
+    private Line videoPlayhead;
+    private Line audioPlayhead;
 
     private static final double PIXELS_PER_SECOND = 80.0;
+    private double timelineDurationSeconds = 0.0;
 
 
     private MediaPlayer player;
@@ -123,6 +128,22 @@ public class AppController {
                 });
 
                 buildSimpleTimeline(total);
+
+                player.currentTimeProperty().addListener((obs, oldT, newT) -> {
+                    double secs = newT.toSeconds();
+                    if (!timeSlider.isValueChanging()) {
+                        timeSlider.setValue(secs);
+                    }
+                    updateTimeLabel(secs, total);
+                    updatePlayheadPosition(secs);
+                });
+
+                player.setOnEndOfMedia(() -> {
+                    player.stop();
+                    timeSlider.setValue(0);
+                    updateTimeLabel(0, total);
+                    updatePlayheadPosition(0);
+                });
 
                 player.play(); // lecture auto au chargement
             });
@@ -236,6 +257,7 @@ public class AppController {
     }
 
     private void buildSimpleTimeline(double durationSeconds) {
+        timelineDurationSeconds = durationSeconds;
         timelineRoot.getChildren().clear();
 
         double width = Math.max(400, durationSeconds * PIXELS_PER_SECOND);
@@ -256,8 +278,15 @@ public class AppController {
         videoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 11;");
         videoClip.getChildren().add(videoLabel);
 
-        videoTrackPane.setPrefWidth(width);;
         videoTrackPane.getChildren().add(videoClip);
+
+        videoPlayhead = new Line();
+        videoPlayhead.setStartY(0);
+        videoPlayhead.setEndY(40);
+        videoPlayhead.setStroke(Color.RED);
+        videoPlayhead.setStrokeWidth(2);
+
+        videoTrackPane.getChildren().add(videoPlayhead);
 
         audioTrackPane = new Pane();
         audioTrackPane.setPrefHeight(40);
@@ -275,7 +304,7 @@ public class AppController {
         audioLabel.setStyle("-fx-text-fill: #022c22; -fx-font-size: 11;");
         audioClip.getChildren().add(audioLabel);
 
-        audioTrackPane.setPrefWidth(width);
+
         audioTrackPane.getChildren().add(audioClip);
 
         // Ajout des deux pistes à la timeline
@@ -283,6 +312,37 @@ public class AppController {
 
         // s'assurer que le ScrollPane connaît la largeur
         timelineRoot.setPrefWidth(width);
+
+        var seekHandler = new javafx.event.EventHandler<javafx.scene.input.MouseEvent>() {
+            @Override
+            public void handle(javafx.scene.input.MouseEvent e) {
+                if (player == null) return;
+                double x = e.getX(); // coordonnée dans la piste
+                double sec = x / PIXELS_PER_SECOND;
+                if (sec < 0) sec = 0;
+                if (sec > timelineDurationSeconds) sec = timelineDurationSeconds;
+                player.seek(Duration.seconds(sec));
+            }
+        };
+        videoTrackPane.setOnMouseClicked(seekHandler);
+        audioTrackPane.setOnMouseClicked(seekHandler);
+
+        // position initiale du playhead
+        updatePlayheadPosition(0.0);
     }
+
+    private void updatePlayheadPosition(double currentSec) {
+        double x = currentSec * PIXELS_PER_SECOND;
+
+        if (videoPlayhead != null) {
+            videoPlayhead.setStartX(x);
+            videoPlayhead.setEndX(x);
+        }
+        if (audioPlayhead != null) {
+            audioPlayhead.setStartX(x);
+            audioPlayhead.setEndX(x);
+        }
+    }
+
 
 }
