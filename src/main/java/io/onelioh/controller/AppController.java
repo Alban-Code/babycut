@@ -1,11 +1,10 @@
 package io.onelioh.controller;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Slider;
+import javafx.scene.control.*;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaException;
 import javafx.scene.media.MediaPlayer;
@@ -27,6 +26,14 @@ public class AppController {
 
     @FXML private ListView<String> videoStreams;
     @FXML private ListView<String> audioStreams;
+
+    @FXML private VBox timelineRoot;
+    @FXML private ScrollPane timelineScroll;
+
+    private Pane videoTrackPane;
+    private Pane audioTrackPane;
+
+    private static final double PIXELS_PER_SECOND = 80.0;
 
 
     private MediaPlayer player;
@@ -114,6 +121,8 @@ public class AppController {
                     timeSlider.setValue(0);
                     updateTimeLabel(0, total);
                 });
+
+                buildSimpleTimeline(total);
 
                 player.play(); // lecture auto au chargement
             });
@@ -224,6 +233,56 @@ public class AppController {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    private void buildSimpleTimeline(double durationSeconds) {
+        timelineRoot.getChildren().clear();
+
+        double width = Math.max(400, durationSeconds * PIXELS_PER_SECOND);
+
+        videoTrackPane = new Pane();
+        videoTrackPane.setPrefHeight(40);
+        videoTrackPane.setMinHeight(40);
+        videoTrackPane.setStyle("-fx-background-color: #111827; -fx-border-color: #374151");
+
+        StackPane videoClip = new StackPane();
+        videoClip.setLayoutX(0);
+        videoClip.setLayoutY(5);
+        videoClip.setPrefHeight(30);
+        videoClip.setPrefWidth(width);
+        videoClip.setStyle("-fx-background-color: #3b82f6; -fx-border-color: #60a5fa;");
+
+        Label videoLabel = new Label("Vidéo 1");
+        videoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 11;");
+        videoClip.getChildren().add(videoLabel);
+
+        videoTrackPane.setPrefWidth(width);;
+        videoTrackPane.getChildren().add(videoClip);
+
+        audioTrackPane = new Pane();
+        audioTrackPane.setPrefHeight(40);
+        audioTrackPane.setMinHeight(40);
+        audioTrackPane.setStyle("-fx-background-color: #020617; -fx-border-color: #374151;");
+
+        StackPane audioClip = new StackPane();
+        audioClip.setLayoutX(0);
+        audioClip.setLayoutY(5);
+        audioClip.setPrefHeight(30);
+        audioClip.setPrefWidth(width);
+        audioClip.setStyle("-fx-background-color: #22c55e; -fx-border-color: #4ade80;");
+
+        Label audioLabel = new Label("Audio 1");
+        audioLabel.setStyle("-fx-text-fill: #022c22; -fx-font-size: 11;");
+        audioClip.getChildren().add(audioLabel);
+
+        audioTrackPane.setPrefWidth(width);
+        audioTrackPane.getChildren().add(audioClip);
+
+        // Ajout des deux pistes à la timeline
+        timelineRoot.getChildren().addAll(videoTrackPane, audioTrackPane);
+
+        // s'assurer que le ScrollPane connaît la largeur
+        timelineRoot.setPrefWidth(width);
     }
 
 }
