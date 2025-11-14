@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.media.MediaView?>
+
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="io.onelioh.controller.AppController">
+            fx:controller="io.onelioh.controller.AppController"
+fx:id="root">
 
-    <!-- BARRE DU HAUT -->
+
     <top>
         <ToolBar style="-fx-background-color: #111827;">
             <Button text="Importer"
@@ -16,66 +17,21 @@
         </ToolBar>
     </top>
 
-    <!-- TOUT LE RESTE EST DANS LE CENTRE -->
+
     <center>
-        <!-- SplitPane vertical : haut = preview, bas = contrôles + pistes -->
         <SplitPane orientation="VERTICAL" dividerPositions="0.7">
             <items>
+                <!-- Haut : player -->
+                <fx:include source="player.fxml" fx:id="playerView"/>
 
-                <!-- HAUT : PREVIEW -->
-                <StackPane fx:id="centerPane" minHeight="0.0" style="-fx-background-color: black;">
-                    <MediaView fx:id="mediaView"/>
-                </StackPane>
-
-                <!-- BAS : CONTROLES + PISTES -->
-                <VBox spacing="6" fillWidth="true" minHeight="0.0">
-                    <!-- contrôles lecture -->
-                    <HBox spacing="8" style="-fx-padding: 4 8 4 8;">
-                        <Button text="▶" fx:id="playBtn"/>
-                        <Button text="⏸" fx:id="pauseBtn"/>
-                        <Button text="⏹" fx:id="stopBtn"/>
-                        <Slider fx:id="timeSlider" HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="timeLabel" text="00:00 / 00:00"/>
-                    </HBox>
-
-                    <!-- Pistes détectées -->
-                    <TitledPane text="Pistes détectées"
-                                expanded="false"
-                                minHeight="0.0">
-                        <content>
-                            <!-- SplitPane horizontal : vidéo à gauche, audio à droite -->
-                            <SplitPane dividerPositions="0.5">
-                                <items>
-                                    <!-- colonne vidéo -->
-                                    <VBox spacing="4" style="-fx-padding: 4;" minHeight="0.0">
-                                        <Label text="Vidéo"/>
-                                        <ListView fx:id="videoStreams"
-                                                  VBox.vgrow="ALWAYS"/>
-                                    </VBox>
-
-                                    <!-- colonne audio -->
-                                    <VBox spacing="4" style="-fx-padding: 4;" minHeight="0.0">
-                                        <Label text="Audio"/>
-                                        <ListView fx:id="audioStreams"
-                                                  VBox.vgrow="ALWAYS"/>
-                                    </VBox>
-                                </items>
-                            </SplitPane>
-                        </content>
-                    </TitledPane>
-
-                    <TitledPane text="Timeline" expanded="true" VBox.vgrow="ALWAYS" minHeight="0.0">
-                        <content>
-                            <ScrollPane fx:id="timelineScroll" fitToHeight="true" hbarPolicy="ALWAYS" vbarPolicy="NEVER">
-                                <content>
-                                    <VBox fx:id="timelineRoot" spacing="4" style="-fx-padding: 4;" minHeight="0.0"></VBox>
-                                </content>
-                            </ScrollPane>
-                        </content>
-                    </TitledPane>
+                <!-- Bas : streams + timeline -->
+                <VBox>
+                    <fx:include source="streams.fxml" fx:id="streamsView"/>
+                    <fx:include source="timeline.fxml" fx:id="timelineView"/>
                 </VBox>
             </items>
         </SplitPane>
     </center>
+
 
 </BorderPane>

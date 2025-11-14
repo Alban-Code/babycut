@@ -1,16 +1,13 @@
 package io.onelioh.controller;
 
+import io.onelioh.service.FfprobeService;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaException;
 import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
@@ -18,58 +15,26 @@ import java.io.File;
 
 public class AppController {
 
-    private static final String FFPROBE = "ffprobe";
+    @FXML private Button importBtn;
+    @FXML private BorderPane root;
 
-    @FXML private MediaView mediaView;
-    @FXML private Button playBtn, pauseBtn, stopBtn, importBtn;
-    @FXML private Label timeLabel;
-    @FXML private Slider timeSlider;
-    @FXML private StackPane centerPane;
+    @FXML private PlayerController playerViewController;
+    @FXML private StreamsController streamsViewController;
+    @FXML private TimelineController timelineViewController;
 
-    @FXML private ListView<String> videoStreams;
-    @FXML private ListView<String> audioStreams;
-
-    @FXML private VBox timelineRoot;
-    @FXML private ScrollPane timelineScroll;
-
-    private Pane videoTrackPane;
-    private Pane audioTrackPane;
-    private Line videoPlayhead;
-    private Line audioPlayhead;
-
-    private static final double PIXELS_PER_SECOND = 80.0;
     private double timelineDurationSeconds = 0.0;
-
-
     private MediaPlayer player;
     private File lastDirectory = null;
 
     @FXML
     private void initialize() {
-        setControlsEnabled(false);
-
         importBtn.setOnAction(e -> openVideo());
 
-        playBtn.setOnAction(e -> { if (player != null) player.play();});
-        pauseBtn.setOnAction(e -> { if (player != null) player.pause();});
-        stopBtn.setOnAction(e -> { if (player != null) player.stop();});
-        // Seek quand on lâche le slider
-        timeSlider.setDisable(true);
-        timeSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
-            if (!isChanging && player != null && player.getStatus() != MediaPlayer.Status.UNKNOWN) {
-                player.seek(Duration.seconds(timeSlider.getValue()));
-            }
-        });
-        // Seek si clic direct sur la barre (drag terminé)
-        timeSlider.setOnMouseReleased(e -> {
+        timelineViewController.setOnSeekRequested(( Double seconds) -> {
             if (player != null) {
-                player.seek(Duration.seconds(timeSlider.getValue()));
+                player.seek(Duration.seconds(seconds));
             }
         });
-        mediaView.setPreserveRatio(true);
-        // Le MediaView suit la taille du centre
-        mediaView.fitWidthProperty().bind(centerPane.widthProperty());
-        mediaView.fitHeightProperty().bind(centerPane.heightProperty());
     }
 
     private void openVideo() {
@@ -81,7 +46,7 @@ public class AppController {
             fc.setInitialDirectory(lastDirectory);
         }
 
-        File file = fc.showOpenDialog(mediaView.getScene().getWindow());
+        File file = fc.showOpenDialog(root.getScene().getWindow());
 
         if(file != null) {
             lastDirectory = file.getParentFile();
@@ -100,249 +65,28 @@ public class AppController {
         try {
             Media media = new Media(file.toURI().toString());
             player = new MediaPlayer(media);
-            mediaView.setMediaPlayer(player);
-            refreshStreamsWithFfprobe(file);
+
+            playerViewController.attachPlayer(player);
+            streamsViewController.setStreams(FfprobeService.analyze(file));
 
             player.setOnReady(() -> {
-                setControlsEnabled(true);
                 double total = player.getTotalDuration().toSeconds();
-                timeSlider.setDisable(false);
-                timeSlider.setMin(0);
-                timeSlider.setMax(total);
-                timeSlider.setValue(0);
-                updateTimeLabel(0, total);
+                timelineDurationSeconds = total;
 
-                // Avancement → slider + label
-                player.currentTimeProperty().addListener((obs, oldT, newT) -> {
-                    if (!timeSlider.isValueChanging()) {
-                        timeSlider.setValue(newT.toSeconds());
-                    }
-                    updateTimeLabel(newT.toSeconds(), total);
-                });
+                playerViewController.onMediaReady(total);
 
-                // Fin de média → remet à zéro
-                player.setOnEndOfMedia(() -> {
-                    player.stop();
-                    timeSlider.setValue(0);
-                    updateTimeLabel(0, total);
-                });
-
-                buildSimpleTimeline(total);
+                timelineViewController.buildTimeline(total);
 
                 player.currentTimeProperty().addListener((obs, oldT, newT) -> {
-                    double secs = newT.toSeconds();
-                    if (!timeSlider.isValueChanging()) {
-                        timeSlider.setValue(secs);
-                    }
-                    updateTimeLabel(secs, total);
-                    updatePlayheadPosition(secs);
+                    timelineViewController.updatePlayhead(newT.toSeconds());
+
+                    player.play(); // lecture auto
                 });
 
-                player.setOnEndOfMedia(() -> {
-                    player.stop();
-                    timeSlider.setValue(0);
-                    updateTimeLabel(0, total);
-                    updatePlayheadPosition(0);
-                });
 
-                player.play(); // lecture auto au chargement
-            });
-
-            player.setOnError(() -> {
-                System.err.println("Erreur MediaPlayer: " + player.getError());
-                setControlsEnabled(false);
             });
         } catch (MediaException e) {
             throw new RuntimeException(e);
         }
     }
-
-    private void setControlsEnabled(boolean enabled) {
-        playBtn.setDisable(!enabled);
-        pauseBtn.setDisable(!enabled);
-        stopBtn.setDisable(!enabled);
-        timeSlider.setDisable(!enabled);
-    }
-
-    private void updateTimeLabel(double currentSec, double totalSec) {
-        timeLabel.setText(formatTime(currentSec) + " / " + formatTime(totalSec));
-    }
-
-    private String formatTime(double sec) {
-        if (Double.isNaN(sec) || sec < 0) sec = 0;
-        int s = (int) Math.floor(sec);
-        int h = s / 3600;
-        int m = (s % 3600) / 60;
-        int ss = s % 60;
-        if (h > 0) return String.format("%d:%02d:%02d", h, m, ss);
-        return String.format("%02d:%02d", m, ss);
-    }
-
-    private void refreshStreamsWithFfprobe(File file) {
-        try {
-            ProcessBuilder pb = new ProcessBuilder(
-                    FFPROBE,
-                    "-v", "error",
-                    "-print_format", "json",
-                    "-show_streams",
-                    file.getAbsolutePath()
-            );
-            pb.redirectErrorStream(true);
-            Process p = pb.start();
-
-            String json = new String(p.getInputStream().readAllBytes());
-            int code = p.waitFor();
-            if (code != 0) {
-                System.err.println("ffprobe exit code " + code);
-                return;
-            }
-
-            // Parse JSON
-            var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            var root = mapper.readTree(json);
-            var streams = root.get("streams");
-            if (streams == null || !streams.isArray()) {
-                videoStreams.getItems().setAll();
-                audioStreams.getItems().setAll();
-                return;
-            }
-
-            var vids = new java.util.ArrayList<String>();
-            var auds = new java.util.ArrayList<String>();
-
-            for (var s : streams) {
-                String type = s.path("codec_type").asText(); // "video" | "audio" | "subtitle" ...
-                String codec = s.path("codec_name").asText();
-                String lang  = s.path("tags").path("language").asText("");
-                String title = s.path("tags").path("title").asText("");
-
-                if ("video".equals(type)) {
-                    int w = s.path("width").asInt(0);
-                    int h = s.path("height").asInt(0);
-                    String fr = s.path("avg_frame_rate").asText("");
-                    String nice = String.format(
-                            "%s %dx%d%s%s%s",
-                            (codec.isEmpty() ? "video" : codec),
-                            w, h,
-                            fr.isEmpty() || "0/0".equals(fr) ? "" : " @" + fr,
-                            lang.isEmpty() ? "" : " [" + lang + "]",
-                            title.isEmpty() ? "" : " — " + title
-                    );
-                    vids.add(nice);
-                } else if ("audio".equals(type)) {
-                    int ch = s.path("channels").asInt(0);
-                    int sr = s.path("sample_rate").asInt(0);
-                    String layout = s.path("channel_layout").asText("");
-                    String nice = String.format(
-                            "%s %s%s%s%s",
-                            (codec.isEmpty() ? "audio" : codec),
-                            ch > 0 ? (ch + "ch") : "",
-                            sr > 0 ? (" " + sr + "Hz") : "",
-                            layout.isEmpty() ? "" : (" (" + layout + ")"),
-                            lang.isEmpty() ? "" : " [" + lang + "]"
-                    );
-                    auds.add(nice.trim());
-                }
-            }
-
-            // Mets à jour l’UI (sur le thread JavaFX)
-            javafx.application.Platform.runLater(() -> {
-                videoStreams.getItems().setAll(vids);
-                audioStreams.getItems().setAll(auds);
-            });
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void buildSimpleTimeline(double durationSeconds) {
-        timelineDurationSeconds = durationSeconds;
-        timelineRoot.getChildren().clear();
-
-        double width = Math.max(400, durationSeconds * PIXELS_PER_SECOND);
-
-        videoTrackPane = new Pane();
-        videoTrackPane.setPrefHeight(40);
-        videoTrackPane.setMinHeight(40);
-        videoTrackPane.setStyle("-fx-background-color: #111827; -fx-border-color: #374151");
-
-        StackPane videoClip = new StackPane();
-        videoClip.setLayoutX(0);
-        videoClip.setLayoutY(5);
-        videoClip.setPrefHeight(30);
-        videoClip.setPrefWidth(width);
-        videoClip.setStyle("-fx-background-color: #3b82f6; -fx-border-color: #60a5fa;");
-
-        Label videoLabel = new Label("Vidéo 1");
-        videoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 11;");
-        videoClip.getChildren().add(videoLabel);
-
-        videoTrackPane.getChildren().add(videoClip);
-
-        videoPlayhead = new Line();
-        videoPlayhead.setStartY(0);
-        videoPlayhead.setEndY(40);
-        videoPlayhead.setStroke(Color.RED);
-        videoPlayhead.setStrokeWidth(2);
-
-        videoTrackPane.getChildren().add(videoPlayhead);
-
-        audioTrackPane = new Pane();
-        audioTrackPane.setPrefHeight(40);
-        audioTrackPane.setMinHeight(40);
-        audioTrackPane.setStyle("-fx-background-color: #020617; -fx-border-color: #374151;");
-
-        StackPane audioClip = new StackPane();
-        audioClip.setLayoutX(0);
-        audioClip.setLayoutY(5);
-        audioClip.setPrefHeight(30);
-        audioClip.setPrefWidth(width);
-        audioClip.setStyle("-fx-background-color: #22c55e; -fx-border-color: #4ade80;");
-
-        Label audioLabel = new Label("Audio 1");
-        audioLabel.setStyle("-fx-text-fill: #022c22; -fx-font-size: 11;");
-        audioClip.getChildren().add(audioLabel);
-
-
-        audioTrackPane.getChildren().add(audioClip);
-
-        // Ajout des deux pistes à la timeline
-        timelineRoot.getChildren().addAll(videoTrackPane, audioTrackPane);
-
-        // s'assurer que le ScrollPane connaît la largeur
-        timelineRoot.setPrefWidth(width);
-
-        var seekHandler = new javafx.event.EventHandler<javafx.scene.input.MouseEvent>() {
-            @Override
-            public void handle(javafx.scene.input.MouseEvent e) {
-                if (player == null) return;
-                double x = e.getX(); // coordonnée dans la piste
-                double sec = x / PIXELS_PER_SECOND;
-                if (sec < 0) sec = 0;
-                if (sec > timelineDurationSeconds) sec = timelineDurationSeconds;
-                player.seek(Duration.seconds(sec));
-            }
-        };
-        videoTrackPane.setOnMouseClicked(seekHandler);
-        audioTrackPane.setOnMouseClicked(seekHandler);
-
-        // position initiale du playhead
-        updatePlayheadPosition(0.0);
-    }
-
-    private void updatePlayheadPosition(double currentSec) {
-        double x = currentSec * PIXELS_PER_SECOND;
-
-        if (videoPlayhead != null) {
-            videoPlayhead.setStartX(x);
-            videoPlayhead.setEndX(x);
-        }
-        if (audioPlayhead != null) {
-            audioPlayhead.setStartX(x);
-            audioPlayhead.setEndX(x);
-        }
-    }
-
-
 }

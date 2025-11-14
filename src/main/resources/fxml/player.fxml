@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.media.MediaView?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="io.onelioh.controller.PlayerController"
+      spacing="4">
+
+    <!-- zone vidéo qui grandit -->
+    <StackPane fx:id="centerPane"
+               VBox.vgrow="ALWAYS"
+               minHeight="0.0"
+               style="-fx-background-color: black;">
+        <MediaView fx:id="mediaView"/>
+    </StackPane>
+
+    <!-- contrôles lecture -->
+    <HBox spacing="8" style="-fx-padding: 4 8 4 8;">
+        <Button text="▶" fx:id="playBtn"/>
+        <Button text="⏸" fx:id="pauseBtn"/>
+        <Button text="⏹" fx:id="stopBtn"/>
+        <Slider fx:id="timeSlider" HBox.hgrow="ALWAYS"/>
+        <Label fx:id="timeLabel" text="00:00 / 00:00"/>
+    </HBox>
+
+</VBox>
