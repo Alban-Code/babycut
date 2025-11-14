@@ -1,6 +1,8 @@
 package io.onelioh.controller;
 
+import io.onelioh.model.MediaInfo;
 import io.onelioh.service.FfprobeService;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -67,7 +69,28 @@ public class AppController {
             player = new MediaPlayer(media);
 
             playerViewController.attachPlayer(player);
-            streamsViewController.setStreams(FfprobeService.analyze(file));
+
+            Task<MediaInfo> ffprobeTask = new Task<>() {
+                @Override
+                protected MediaInfo call() throws Exception {
+                    return FfprobeService.analyze(file);
+                }
+            };
+
+            ffprobeTask.setOnSucceeded(e -> {
+                MediaInfo info = ffprobeTask.getValue();
+
+                streamsViewController.setStreams(info);
+                timelineViewController.buildTimeline(info);
+            });
+
+            ffprobeTask.setOnFailed(e -> {
+                ffprobeTask.getException().printStackTrace();
+            });
+
+            Thread t = new Thread(ffprobeTask);
+            t.setDaemon(true);
+            t.start();
 
             player.setOnReady(() -> {
                 double total = player.getTotalDuration().toSeconds();
@@ -75,7 +98,7 @@ public class AppController {
 
                 playerViewController.onMediaReady(total);
 
-                timelineViewController.buildTimeline(total);
+
 
                 player.currentTimeProperty().addListener((obs, oldT, newT) -> {
                     timelineViewController.updatePlayhead(newT.toSeconds());

@@ -10,6 +10,6 @@ public class StreamsController {
 
     public void setStreams(MediaInfo info) {
         videoStreams.getItems().setAll(info.getVideoLabels());
-        audioStreams.getItems().setAll(info.getAudioLables());
+        audioStreams.getItems().setAll(info.getAudioLabels());
     }
 }
