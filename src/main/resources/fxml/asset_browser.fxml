@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="io.onelioh.babycut.controller.AssetBrowser"
+      spacing="4"
+      style="-fx-padding: 8; -fx-background-color: #020617;">
+
+    <Label text="Fichiers du projet"
+           style="-fx-text-fill: #e5e7eb; -fx-font-size: 13; -fx-font-weight: bold;"/>
+
+    <SplitPane VBox.vgrow="ALWAYS" dividerPositions="0.4">
+        <ListView fx:id="assetsListView"
+                  VBox.vgrow="ALWAYS"
+                  style="-fx-background-color: #0b1120;"/>
+
+        <fx:include source="streams.fxml" fx:id="streamsView" />
+    </SplitPane>
+
+    <Button text="Ajouter à la timeline"
+            onAction="#onAddToTimelineClicked"
+            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 12;"/>
+
+</VBox>

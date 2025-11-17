@@ -1,4 +1,4 @@
-package io.onelioh.controller;
+package io.onelioh.babycut.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

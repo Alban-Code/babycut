@@ -1,11 +1,10 @@
-package io.onelioh.service;
+package io.onelioh.babycut.service;
 
-import io.onelioh.model.MediaInfo;
-import io.onelioh.model.MediaStream;
-import io.onelioh.model.MediaType;
+import io.onelioh.babycut.model.media.MediaInfo;
+import io.onelioh.babycut.model.media.MediaStream;
+import io.onelioh.babycut.model.media.MediaType;
 
 import java.io.File;
-import java.util.List;
 
 public class FfprobeService {
     private static final String FFPROBE = "ffprobe";
@@ -41,28 +40,27 @@ public class FfprobeService {
 
             var vids = new java.util.ArrayList<MediaStream>();
             var auds = new java.util.ArrayList<MediaStream>();
-            double durationLol = -1;
+
 
             for (var s : streams) {
                 String type = s.path("codec_type").asText(); // "video" | "audio" | "subtitle" ...
                 String codec = s.path("codec_name").asText();
                 String lang  = s.path("tags").path("language").asText("");
                 String title = s.path("tags").path("title").asText("");
+                double durationStream = s.path("duration").asDouble();
 
                 if ("video".equals(type)) {
-                    MediaStream videoStream = new MediaStream(MediaType.VIDEO, (codec.isEmpty() ? "video" : codec), 1, lang.isEmpty() ? "" : " [" + lang + "]", title.isEmpty() ? "" : " — " + title);
+                    MediaStream videoStream = new MediaStream(MediaType.VIDEO, (codec.isEmpty() ? "video" : codec), 1, lang.isEmpty() ? "" : " [" + lang + "]", title.isEmpty() ? "" : " — " + title, durationStream);
                     vids.add(videoStream);
-                    if (durationLol <= 0) {
-                        durationLol = s.path("duration").asDouble();
-                    }
                 } else if ("audio".equals(type)) {
                     System.out.println("Audio" + codec + s.path("index"));
-                    MediaStream audioStream = new MediaStream(MediaType.AUDIO, (codec.isEmpty() ? "audio" : codec), 1, lang.isEmpty() ? "" : " [" + lang + "]", title.isEmpty() ? "" : " — " + title);
+                    MediaStream audioStream = new MediaStream(MediaType.AUDIO, (codec.isEmpty() ? "audio" : codec), 1, lang.isEmpty() ? "" : " [" + lang + "]", title.isEmpty() ? "" : " — " + title, durationStream);
                     auds.add(audioStream);
                 }
             }
 
-            return new MediaInfo(vids, auds, durationLol);
+            // durée de la vidéo en tant que durée du media
+            return new MediaInfo(vids, auds, vids.getFirst().getDuration());
 
         } catch (Exception ex) {
             ex.printStackTrace();

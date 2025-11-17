@@ -5,7 +5,7 @@
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="io.onelioh.controller.PlayerController"
+      fx:controller="io.onelioh.babycut.controller.PlayerController"
       spacing="4">
 
     <!-- zone vidéo qui grandit -->

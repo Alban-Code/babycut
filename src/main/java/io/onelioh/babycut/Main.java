@@ -1,4 +1,4 @@
-package io.onelioh;
+package io.onelioh.babycut;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;

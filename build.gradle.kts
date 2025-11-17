@@ -39,7 +39,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.onelioh.Main")
+    mainClass.set("io.onelioh.babycut.Main")
     // Ajoute ça pour être sûr que les modules JavaFX sont chargés :
     applicationDefaultJvmArgs = listOf("--add-modules=javafx.controls,javafx.media,javafx.fxml")
 }

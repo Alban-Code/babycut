@@ -1,6 +1,6 @@
-package io.onelioh.controller;
+package io.onelioh.babycut.controller;
 
-import io.onelioh.model.MediaInfo;
+import io.onelioh.babycut.model.media.MediaInfo;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 

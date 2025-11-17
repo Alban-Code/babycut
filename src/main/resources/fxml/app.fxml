@@ -5,33 +5,29 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="io.onelioh.controller.AppController"
-fx:id="root">
+            fx:controller="io.onelioh.babycut.controller.AppController"
+            fx:id="root">
 
 
     <top>
-        <ToolBar style="-fx-background-color: #111827;">
-            <Button text="Importer"
-                    fx:id="importBtn"
-                    style="-fx-background-color: #1f2937; -fx-text-fill: white;"/>
-        </ToolBar>
+        <fx:include source="toolbar.fxml" fx:id="toolbarView"/>
     </top>
 
 
     <center>
-        <SplitPane orientation="VERTICAL" dividerPositions="0.7">
-            <items>
-                <!-- Haut : player -->
+        <SplitPane orientation="VERTICAL" dividerPositions="0.65">
+            <SplitPane dividerPositions="0.25">
+                <fx:include source="asset_browser.fxml" fx:id="assetsView"/>
                 <fx:include source="player.fxml" fx:id="playerView"/>
+            </SplitPane>
 
-                <!-- Bas : streams + timeline -->
-                <VBox>
-                    <fx:include source="streams.fxml" fx:id="streamsView"/>
-                    <fx:include source="timeline.fxml" fx:id="timelineView"/>
-                </VBox>
-            </items>
+            <fx:include source="timeline.fxml" fx:id="timelineView"/>
         </SplitPane>
     </center>
+
+    <bottom>
+
+    </bottom>
 
 
 </BorderPane>

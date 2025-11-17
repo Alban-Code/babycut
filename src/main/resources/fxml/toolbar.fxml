@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="io.onelioh.babycut.controller.ToolbarController"
+      spacing="8"
+      style="-fx-padding: 6; -fx-background-color: #111827;">
+
+    <Button text="Nouveau projet"
+            onAction="#onNewProjectClicked"
+            style="-fx-background-color: #1f2937; -fx-text-fill: white;"/>
+
+    <Button text="Importer un média"
+            onAction="#onImportMediaClicked"
+            style="-fx-background-color: #2563eb; -fx-text-fill: white;"/>
+
+    <Separator orientation="VERTICAL"/>
+
+    <Button text="Lire la timeline"
+            onAction="#onPlayTimelineClicked"
+            style="-fx-background-color: #15803d; -fx-text-fill: white;"/>
+
+    <Button text="Cut"
+            onAction="#onCutClicked"
+            style="-fx-background-color: #b91c1c; -fx-text-fill: white;"/>
+
+</HBox>

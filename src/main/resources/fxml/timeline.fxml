@@ -2,23 +2,18 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<TitledPane xmlns="http://javafx.com/javafx"
+<ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="io.onelioh.controller.TimelineController"
-            text="Timeline"
-            expanded="true"
-            minHeight="0.0">
+            fx:controller="io.onelioh.babycut.controller.TimelineController"
+            minHeight="0.0"
+            fx:id="timelineScroll"
+            fitToHeight="true"
+            hbarPolicy="ALWAYS"
+            vbarPolicy="NEVER">
 
     <content>
-        <ScrollPane fx:id="timelineScroll"
-                    fitToHeight="true"
-                    hbarPolicy="ALWAYS"
-                    vbarPolicy="NEVER">
-            <content>
-                <StackPane fx:id="timelineRoot"
-                      style="-fx-padding: 4;"
-                      minHeight="0.0"/>
-            </content>
-        </ScrollPane>
+        <StackPane fx:id="timelineRoot"
+                   style="-fx-padding: 4;"
+                   minHeight="0.0"/>
     </content>
-</TitledPane>
+</ScrollPane>
