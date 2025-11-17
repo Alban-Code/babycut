@@ -41,6 +41,9 @@ public class AppController {
     private MediaPlayer player;
     private File lastDirectory = null;
 
+    private double currentTimelineSeconds = 0.0;
+    private ClipItem currentPlayingClip;
+
     @FXML
     private void initialize() {
         project = new Project();
@@ -55,11 +58,10 @@ public class AppController {
         });
 
 
-        timelineViewController.setOnSeekRequested((Double seconds) -> {
-            if (player != null) {
-                player.seek(Duration.seconds(seconds));
-            }
+        timelineViewController.setOnSeekRequested(seconds -> {
+            seekTimeline(seconds);
         });
+
     }
 
     public void handleNewProject() {
@@ -72,10 +74,15 @@ public class AppController {
     }
 
     public void handlePlayTimeline() {
-        System.out.println("Lire la timeline");
-        if (player != null) {
-            player.play(); // plus tard ce sera un PlaybackEngine
+        if (activeTimeline == null) {
+            System.out.println("Pas de timeline active, rien à lire.");
+            return;
         }
+
+        // si tu veux repartir du début à chaque fois :
+        // currentTimelineSeconds = 0.0;
+
+        playFromTimeline(currentTimelineSeconds);
     }
 
     public void handleCutAtPlayhead() {
@@ -148,17 +155,11 @@ public class AppController {
                 double total = player.getTotalDuration().toSeconds();
                 timelineDurationSeconds = total;
 
+                // juste pour que ton PlayerController puisse afficher la durée / slider
                 playerViewController.onMediaReady(total);
-
-
-                player.currentTimeProperty().addListener((obs, oldT, newT) -> {
-                    timelineViewController.updatePlayhead(newT.toSeconds());
-
-                    player.play(); // lecture auto
-                });
-
-
             });
+
+
         } catch (MediaException e) {
             throw new RuntimeException(e);
         }
@@ -218,6 +219,133 @@ public class AppController {
         return audioStreams.getFirst();
     }
 
+    private ClipItem findClipAtTime(Timeline timeline, double timelineSeconds) {
+        if (timeline == null || timeline.getTracks().isEmpty()) return null;
+
+        TimelineTrack videoTrack = timeline.getTracks().getFirst();
+        for (TimelineItem item : videoTrack.getItems()) {
+            if (item instanceof ClipItem clip) {
+                double start = clip.getStartTime();
+                double end = clip.getEndTime();
+                if (timelineSeconds >= start && timelineSeconds < end) {
+                    return clip;
+                }
+            }
+
+        }
+        return null;
+    }
+
+    private ClipItem findNextClipAfter(Timeline timeline, ClipItem current) {
+//        if (timeline == null || timeline.getTracks().isEmpty()) return null;
+//
+//        TimelineTrack videoTrack = timeline.getTracks().getFirst();
+//        for (TimelineItem item : videoTrack.getItems()) {
+//            if (item instanceof ClipItem clip) {
+//                double start = clip.getStartTime();
+//                if (current.getEndTime() == start) {
+//                    return clip;
+//                }
+//            }
+//
+//        }
+//        return null;
+        if (timeline == null || timeline.getTracks().isEmpty() || current == null) return null;
+
+        TimelineTrack videoTrack = timeline.getTracks().getFirst();
+        ClipItem next = null;
+        double after = current.getEndTime();
+
+        for (TimelineItem item : videoTrack.getItems()) {
+            if (item instanceof ClipItem clip) {
+                if (clip.getStartTime() >= after) {
+                    if (next == null || clip.getStartTime() < next.getStartTime()) {
+                        next = clip;
+                    }
+                }
+            }
+        }
+        return next;
+    }
+
+    private void playFromTimeline(double timelineSeconds) {
+        if (activeTimeline == null) return;
+
+        ClipItem clip = findClipAtTime(activeTimeline, timelineSeconds);
+        if (clip == null) return;
+
+        currentPlayingClip = clip;
+        currentTimelineSeconds = timelineSeconds;
+
+        double localOffset = timelineSeconds - clip.getStartTime();
+        double sourceTime = clip.getSourceIn() + localOffset;
+
+        if (player != null) {
+            try {
+                player.dispose();
+            } catch (Exception ignored) {
+            }
+            player = null;
+        }
+
+        Media media = new Media(clip.getAsset().getPath().toUri().toString());
+        player = new MediaPlayer(media);
+        playerViewController.attachPlayer(player);
+
+        player.setOnReady(() -> {
+            player.seek(Duration.seconds(sourceTime));
+            player.play();
+
+            player.currentTimeProperty().addListener((obs, oldT, newT) -> {
+                double tInFile = newT.toSeconds();
+                double tInTimeline = clip.getStartTime() + (tInFile - sourceTime);
+                currentTimelineSeconds = tInTimeline;
+                timelineViewController.updatePlayhead(tInTimeline);
+            });
+        });
+
+        player.setOnEndOfMedia(() -> {
+            ClipItem next = findNextClipAfter(activeTimeline, currentPlayingClip);
+            if (next != null) {
+                playFromTimeline(next.getStartTime());
+            }
+        });
+    }
+
+    private void seekTimeline(double timelineSeconds) {
+        currentTimelineSeconds = timelineSeconds;
+        timelineViewController.updatePlayhead(currentTimelineSeconds);
+
+        if (activeTimeline == null) return;
+
+        ClipItem clip = findClipAtTime(activeTimeline, timelineSeconds);
+
+        if (clip == null) return;
+
+        double localOffset = timelineSeconds - clip.getStartTime();
+        double sourceTime = clip.getSourceIn() + localOffset;
+
+        String wantedUrl = clip.getAsset().getPath().toUri().toString();
+        boolean needsNewPlayer = (player == null);
+
+        if (!needsNewPlayer) {
+            String currentUrl = player.getMedia().getSource();
+            needsNewPlayer = !currentUrl.equals(wantedUrl);
+        }
+
+        if (needsNewPlayer) {
+            if (player != null) {
+                try { player.dispose(); } catch (Exception ignored) {}
+            }
+            Media media = new Media(wantedUrl);
+            player = new MediaPlayer(media);
+            playerViewController.attachPlayer(player);
+
+            player.setOnReady(() -> player.seek(Duration.seconds(sourceTime)));
+        } else {
+            player.seek(Duration.seconds(sourceTime));
+        }
+    }
 
 
 }
