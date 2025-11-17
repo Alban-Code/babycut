@@ -1,8 +1,6 @@
 package io.onelioh.babycut.controller;
 
-import io.onelioh.babycut.model.media.MediaInfo;
 import io.onelioh.babycut.model.timeline.*;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;

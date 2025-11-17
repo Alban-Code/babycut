@@ -11,9 +11,7 @@
             hbarPolicy="ALWAYS"
             vbarPolicy="NEVER">
 
-    <content>
-        <StackPane fx:id="timelineRoot"
-                   style="-fx-padding: 4;"
-                   minHeight="0.0"/>
-    </content>
+    <StackPane fx:id="timelineRoot"
+               style="-fx-padding: 4;"
+               minHeight="0.0"/>
 </ScrollPane>

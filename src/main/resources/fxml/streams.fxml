@@ -12,17 +12,15 @@
            style="-fx-text-fill: #e5e7eb; -fx-font-size: 12; -fx-font-weight: bold;"/>
 
     <SplitPane dividerPositions="0.5">
-        <items>
-            <VBox spacing="4" minHeight="0.0">
-                <Label text="Vidéo"/>
-                <ListView fx:id="videoStreams" VBox.vgrow="ALWAYS"/>
-            </VBox>
+        <VBox spacing="4" minHeight="0.0">
+            <Label text="Vidéo"/>
+            <ListView fx:id="videoStreams" VBox.vgrow="ALWAYS"/>
+        </VBox>
 
-            <VBox spacing="4" minHeight="0.0">
-                <Label text="Audio"/>
-                <ListView fx:id="audioStreams" VBox.vgrow="ALWAYS"/>
-            </VBox>
-        </items>
+        <VBox spacing="4" minHeight="0.0">
+            <Label text="Audio"/>
+            <ListView fx:id="audioStreams" VBox.vgrow="ALWAYS"/>
+        </VBox>
     </SplitPane>
 
 </VBox>
