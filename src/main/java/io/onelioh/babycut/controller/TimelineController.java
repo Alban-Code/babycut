@@ -39,7 +39,16 @@ public class TimelineController {
         rebuildFromModel();
     }
 
-    public void updatePlayhead(double currentSec) {}
+    public void updatePlayhead(double currentSec) {
+        double x = currentSec * PIXELS_PER_SECOND;
+
+        if (playhead != null) {
+            // La ligne reste verticale de x à x, on la décale juste
+            playhead.setStartX(0);
+            playhead.setEndX(0);
+            playhead.setLayoutX(x);
+        }
+    }
 
     public void setOnSeekRequested(Consumer<Double> handler) {
         this.onSeekRequested = handler;
@@ -75,6 +84,8 @@ public class TimelineController {
 
         // playhead
         playhead = new Line();
+        playhead.setStartX(0);
+        playhead.setEndX(0);
         playhead.setStartY(0);
         playhead.setStroke(Color.RED);
         playhead.setStrokeWidth(2);
@@ -83,6 +94,7 @@ public class TimelineController {
 
         StackPane.setAlignment(playhead, Pos.TOP_LEFT);
         timelineRoot.getChildren().add(playhead);
+
 
         // position initiale
         updatePlayhead(0.0);

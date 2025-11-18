@@ -31,17 +31,21 @@ dependencies {
     implementation("org.openjfx:javafx-controls:21")
     implementation("org.openjfx:javafx-media:21")
     implementation("org.openjfx:javafx-fxml:21")
+    implementation("org.openjfx:javafx-swing:21")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
     implementation("com.fasterxml.jackson.core:jackson-core:2.17.2")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.17.2")
 
+    implementation("org.bytedeco:javacv-platform:1.5.12")
+
 }
 
 application {
-    mainClass.set("io.onelioh.babycut.Main")
+//    mainClass.set("io.onelioh.babycut.Main")
+    mainClass.set("io.onelioh.babycut.sandbox.TestVideoPlayerApp")
     // Ajoute ça pour être sûr que les modules JavaFX sont chargés :
-    applicationDefaultJvmArgs = listOf("--add-modules=javafx.controls,javafx.media,javafx.fxml")
+    applicationDefaultJvmArgs = listOf("--add-modules=javafx.controls,javafx.media,javafx.fxml,javafx.swing")
 }
 
 
