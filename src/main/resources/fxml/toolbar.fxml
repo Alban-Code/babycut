@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.HBox?>
 <HBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="io.onelioh.babycut.controller.ToolbarController"
+      fx:controller="io.onelioh.babycut.ui.toolbar.ToolbarController"
       spacing="8"
       style="-fx-padding: 6; -fx-background-color: #111827;">
 

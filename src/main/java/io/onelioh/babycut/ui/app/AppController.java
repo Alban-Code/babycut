@@ -1,15 +1,21 @@
-package io.onelioh.babycut.controller;
+package io.onelioh.babycut.ui.app;
 
+import io.onelioh.babycut.infra.javacv.JavaCvVideoDecoder;
+import io.onelioh.babycut.media.playback.PreviewPlayer;
+import io.onelioh.babycut.ui.assets.AssetBrowser;
+import io.onelioh.babycut.ui.player.PlayerController;
+import io.onelioh.babycut.ui.player.VideoFrameToFxImageConverter;
+import io.onelioh.babycut.ui.timeline.TimelineController;
+import io.onelioh.babycut.ui.toolbar.ToolbarController;
 import io.onelioh.babycut.model.media.AssetType;
 import io.onelioh.babycut.model.media.MediaAsset;
 import io.onelioh.babycut.model.media.MediaInfo;
 import io.onelioh.babycut.model.media.MediaStream;
 import io.onelioh.babycut.model.project.Project;
 import io.onelioh.babycut.model.timeline.*;
-import io.onelioh.babycut.service.FfprobeService;
+import io.onelioh.babycut.infra.ffmpeg.FfprobeService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaException;
@@ -38,7 +44,7 @@ public class AppController {
     private Timeline activeTimeline;
 
     private double timelineDurationSeconds = 0.0;
-    private MediaPlayer player;
+    private PreviewPlayer player;
     private File lastDirectory = null;
 
     private double currentTimelineSeconds = 0.0;
@@ -46,6 +52,7 @@ public class AppController {
 
     @FXML
     private void initialize() {
+        System.out.println("Init de app controller");
         project = new Project();
 
         toolbarViewController.setAppController(this);
@@ -58,9 +65,11 @@ public class AppController {
         });
 
 
-        timelineViewController.setOnSeekRequested(seconds -> {
-            seekTimeline(seconds);
-        });
+//        timelineViewController.setOnSeekRequested(seconds -> {
+//            seekTimeline(seconds);
+//        });
+
+        setupPlayer();
 
     }
 
@@ -82,7 +91,7 @@ public class AppController {
         // si tu veux repartir du début à chaque fois :
         // currentTimelineSeconds = 0.0;
 
-        playFromTimeline(currentTimelineSeconds);
+        // playFromTimeline(currentTimelineSeconds);
     }
 
     public void handleCutAtPlayhead() {
@@ -116,7 +125,7 @@ public class AppController {
     private void loadMedia(File file) {
         if (player != null) {
             try {
-                player.dispose();
+                player.stop();
             } catch (Exception ignored) {
             }
             player = null;
@@ -124,9 +133,17 @@ public class AppController {
 
         try {
             Media media = new Media(file.toURI().toString());
-            player = new MediaPlayer(media);
 
-            playerViewController.attachPlayer(player);
+            JavaCvVideoDecoder decoder = new JavaCvVideoDecoder(file.getPath());
+            decoder.openMedia();
+            VideoFrameToFxImageConverter converter = new VideoFrameToFxImageConverter();
+
+            player = new PreviewPlayer(decoder, converter);
+            player.setOnFrameReady((image) -> {
+                playerViewController.setImage(image);
+            });
+
+            player.start();
 
             Task<MediaInfo> ffprobeTask = new Task<>() {
                 @Override
@@ -151,13 +168,13 @@ public class AppController {
             t.setDaemon(true);
             t.start();
 
-            player.setOnReady(() -> {
-                double total = player.getTotalDuration().toSeconds();
-                timelineDurationSeconds = total;
-
-                // juste pour que ton PlayerController puisse afficher la durée / slider
-                playerViewController.onMediaReady(total);
-            });
+//            player.setOnReady(() -> {
+//                double total = player.getTotalDuration().toSeconds();
+//                timelineDurationSeconds = total;
+//
+//                // juste pour que ton PlayerController puisse afficher la durée / slider
+//                playerViewController.onMediaReady(total);
+//            });
 
 
         } catch (MediaException e) {
@@ -170,10 +187,22 @@ public class AppController {
         AssetType type = mediaInfo.getAudioStreams().isEmpty() ? AssetType.AUDIO : AssetType.VIDEO;
         MediaAsset asset = new MediaAsset(file.toPath(), type, mediaInfo);
 
+        double totalSec = asset.getMediaInfo().getDurationSeconds();
+
         // ajout de l'asset au projet
         project.addMediaAsset(asset);
 
         assetsViewController.setAssets(project.getMediaAssets());
+
+        playerViewController.setDuration(totalSec);
+        player.setOnTimeChanged(currentSec -> {
+            playerViewController.updateTime(currentSec, totalSec);
+        });
+        player.setOnEndOfMedia(() -> {
+            // comportement type MediaPlayer : curseur à la fin ou retour au début
+            // ici, par ex. on reste à la fin :
+            playerViewController.updateTime(totalSec, totalSec);
+        });
     }
 
     private void ensureActiveTimelineExists() {
@@ -268,83 +297,102 @@ public class AppController {
         return next;
     }
 
-    private void playFromTimeline(double timelineSeconds) {
-        if (activeTimeline == null) return;
+//    private void playFromTimeline(double timelineSeconds) {
+//        if (activeTimeline == null) return;
+//
+//        ClipItem clip = findClipAtTime(activeTimeline, timelineSeconds);
+//        if (clip == null) return;
+//
+//        currentPlayingClip = clip;
+//        currentTimelineSeconds = timelineSeconds;
+//
+//        double localOffset = timelineSeconds - clip.getStartTime();
+//        double sourceTime = clip.getSourceIn() + localOffset;
+//
+//        if (player != null) {
+//            try {
+//                player.stop();
+//            } catch (Exception ignored) {
+//            }
+//            player = null;
+//        }
+//
+//        Media media = new Media(clip.getAsset().getPath().toUri().toString());
+//        player = new MediaPlayer(media);
+//        playerViewController.attachPlayer(player);
+//
+//        player.setOnReady(() -> {
+//            player.seek(Duration.seconds(sourceTime));
+//            player.play();
+//
+//            player.currentTimeProperty().addListener((obs, oldT, newT) -> {
+//                double tInFile = newT.toSeconds();
+//                double tInTimeline = clip.getStartTime() + (tInFile - sourceTime);
+//                currentTimelineSeconds = tInTimeline;
+//                timelineViewController.updatePlayhead(tInTimeline);
+//            });
+//        });
+//
+//        player.setOnEndOfMedia(() -> {
+//            ClipItem next = findNextClipAfter(activeTimeline, currentPlayingClip);
+//            if (next != null) {
+//                playFromTimeline(next.getStartTime());
+//            }
+//        });
+//    }
+//
+//    private void seekTimeline(double timelineSeconds) {
+//        currentTimelineSeconds = timelineSeconds;
+//        timelineViewController.updatePlayhead(currentTimelineSeconds);
+//
+//        if (activeTimeline == null) return;
+//
+//        ClipItem clip = findClipAtTime(activeTimeline, timelineSeconds);
+//
+//        if (clip == null) return;
+//
+//        double localOffset = timelineSeconds - clip.getStartTime();
+//        double sourceTime = clip.getSourceIn() + localOffset;
+//
+//        String wantedUrl = clip.getAsset().getPath().toUri().toString();
+//        boolean needsNewPlayer = (player == null);
+//
+//        if (!needsNewPlayer) {
+//            String currentUrl = player.getMedia().getSource();
+//            needsNewPlayer = !currentUrl.equals(wantedUrl);
+//        }
+//
+//        if (needsNewPlayer) {
+//            if (player != null) {
+//                try { player.dispose(); } catch (Exception ignored) {}
+//            }
+//            Media media = new Media(wantedUrl);
+//            player = new MediaPlayer(media);
+//            playerViewController.attachPlayer(player);
+//
+//            player.setOnReady(() -> player.seek(Duration.seconds(sourceTime)));
+//        } else {
+//            player.seek(Duration.seconds(sourceTime));
+//        }
+//    }
 
-        ClipItem clip = findClipAtTime(activeTimeline, timelineSeconds);
-        if (clip == null) return;
+    private void setupPlayer() {
 
-        currentPlayingClip = clip;
-        currentTimelineSeconds = timelineSeconds;
-
-        double localOffset = timelineSeconds - clip.getStartTime();
-        double sourceTime = clip.getSourceIn() + localOffset;
-
-        if (player != null) {
-            try {
-                player.dispose();
-            } catch (Exception ignored) {
-            }
-            player = null;
-        }
-
-        Media media = new Media(clip.getAsset().getPath().toUri().toString());
-        player = new MediaPlayer(media);
-        playerViewController.attachPlayer(player);
-
-        player.setOnReady(() -> {
-            player.seek(Duration.seconds(sourceTime));
+        playerViewController.setOnPlayRequested(() -> {
             player.play();
-
-            player.currentTimeProperty().addListener((obs, oldT, newT) -> {
-                double tInFile = newT.toSeconds();
-                double tInTimeline = clip.getStartTime() + (tInFile - sourceTime);
-                currentTimelineSeconds = tInTimeline;
-                timelineViewController.updatePlayhead(tInTimeline);
-            });
         });
 
-        player.setOnEndOfMedia(() -> {
-            ClipItem next = findNextClipAfter(activeTimeline, currentPlayingClip);
-            if (next != null) {
-                playFromTimeline(next.getStartTime());
-            }
+        playerViewController.setOnPauseRequested(() -> {
+            player.pause();
         });
-    }
 
-    private void seekTimeline(double timelineSeconds) {
-        currentTimelineSeconds = timelineSeconds;
-        timelineViewController.updatePlayhead(currentTimelineSeconds);
+        playerViewController.setOnStopRequested(() -> {
+            player.stop();
+        });
 
-        if (activeTimeline == null) return;
-
-        ClipItem clip = findClipAtTime(activeTimeline, timelineSeconds);
-
-        if (clip == null) return;
-
-        double localOffset = timelineSeconds - clip.getStartTime();
-        double sourceTime = clip.getSourceIn() + localOffset;
-
-        String wantedUrl = clip.getAsset().getPath().toUri().toString();
-        boolean needsNewPlayer = (player == null);
-
-        if (!needsNewPlayer) {
-            String currentUrl = player.getMedia().getSource();
-            needsNewPlayer = !currentUrl.equals(wantedUrl);
-        }
-
-        if (needsNewPlayer) {
-            if (player != null) {
-                try { player.dispose(); } catch (Exception ignored) {}
-            }
-            Media media = new Media(wantedUrl);
-            player = new MediaPlayer(media);
-            playerViewController.attachPlayer(player);
-
-            player.setOnReady(() -> player.seek(Duration.seconds(sourceTime)));
-        } else {
-            player.seek(Duration.seconds(sourceTime));
-        }
+        playerViewController.setOnSeekRequested((Double seconds) -> {
+            player.seek(seconds);
+        });
     }
 
 

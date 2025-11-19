@@ -4,7 +4,7 @@
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="io.onelioh.babycut.controller.StreamsController"
+      fx:controller="io.onelioh.babycut.ui.assets.StreamsController"
       spacing="4"
       style="-fx-padding: 4;">
 

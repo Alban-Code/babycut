@@ -1,4 +1,4 @@
-package io.onelioh.babycut.service;
+package io.onelioh.babycut.infra.ffmpeg;
 
 import io.onelioh.babycut.model.media.MediaInfo;
 import io.onelioh.babycut.model.media.MediaStream;
@@ -18,12 +18,12 @@ public class FfprobeService {
                     "-show_streams",
                     file.getAbsolutePath()
             );
-            System.out.println("command: " + String.join(" ", pb.command()));
+
             pb.redirectErrorStream(true);
             Process p = pb.start();
 
             String json = new String(p.getInputStream().readAllBytes());
-            System.out.println("Json: " + json);
+
             int code = p.waitFor();
             if (code != 0) {
                 System.err.println("ffprobe exit code " + code);
@@ -53,7 +53,6 @@ public class FfprobeService {
                     MediaStream videoStream = new MediaStream(MediaType.VIDEO, (codec.isEmpty() ? "video" : codec), 1, lang.isEmpty() ? "" : " [" + lang + "]", title.isEmpty() ? "" : " — " + title, durationStream);
                     vids.add(videoStream);
                 } else if ("audio".equals(type)) {
-                    System.out.println("Audio" + codec + s.path("index"));
                     MediaStream audioStream = new MediaStream(MediaType.AUDIO, (codec.isEmpty() ? "audio" : codec), 1, lang.isEmpty() ? "" : " [" + lang + "]", title.isEmpty() ? "" : " — " + title, durationStream);
                     auds.add(audioStream);
                 }

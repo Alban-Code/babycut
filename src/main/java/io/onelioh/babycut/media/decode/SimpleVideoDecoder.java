@@ -1,4 +1,4 @@
-package io.onelioh.babycut.core;
+package io.onelioh.babycut.media.decode;
 
 public interface SimpleVideoDecoder {
 
@@ -9,4 +9,6 @@ public interface SimpleVideoDecoder {
     VideoFrame readNextFrame();
 
     void close();
+
+    void seek(double seconds);
 }

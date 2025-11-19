@@ -4,7 +4,7 @@
 
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="io.onelioh.babycut.controller.TimelineController"
+            fx:controller="io.onelioh.babycut.ui.timeline.TimelineController"
             minHeight="0.0"
             fx:id="timelineScroll"
             fitToHeight="true"

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.media.MediaView?>
 
+<?import javafx.scene.image.ImageView?>
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="io.onelioh.babycut.controller.PlayerController"
+      fx:controller="io.onelioh.babycut.ui.player.PlayerController"
       spacing="4">
 
     <!-- zone vidéo qui grandit -->
@@ -13,7 +13,7 @@
                VBox.vgrow="ALWAYS"
                minHeight="0.0"
                style="-fx-background-color: black;">
-        <MediaView fx:id="mediaView"/>
+        <ImageView fx:id="videoImageView"/>
     </StackPane>
 
     <!-- contrôles lecture -->

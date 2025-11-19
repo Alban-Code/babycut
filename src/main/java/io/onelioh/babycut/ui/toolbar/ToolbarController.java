@@ -1,5 +1,6 @@
-package io.onelioh.babycut.controller;
+package io.onelioh.babycut.ui.toolbar;
 
+import io.onelioh.babycut.ui.app.AppController;
 import javafx.fxml.FXML;
 
 public class ToolbarController {

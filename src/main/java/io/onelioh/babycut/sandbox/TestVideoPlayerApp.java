@@ -1,8 +1,8 @@
 package io.onelioh.babycut.sandbox;
 
-import io.onelioh.babycut.core.JavaCvVideoDecoder;
-import io.onelioh.babycut.core.VideoFrame;
-import io.onelioh.babycut.core.VideoFrameToFxImageConverter;
+import io.onelioh.babycut.infra.javacv.JavaCvVideoDecoder;
+import io.onelioh.babycut.media.decode.VideoFrame;
+import io.onelioh.babycut.ui.player.VideoFrameToFxImageConverter;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;

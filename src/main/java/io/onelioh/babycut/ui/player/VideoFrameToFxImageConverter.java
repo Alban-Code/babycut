@@ -1,5 +1,6 @@
-package io.onelioh.babycut.core;
+package io.onelioh.babycut.ui.player;
 
+import io.onelioh.babycut.media.decode.VideoFrame;
 import javafx.embed.swing.SwingFXUtils;
 
 import javafx.scene.image.WritableImage;

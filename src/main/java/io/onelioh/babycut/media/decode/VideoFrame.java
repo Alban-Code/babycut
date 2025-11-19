@@ -1,4 +1,4 @@
-package io.onelioh.babycut.core;
+package io.onelioh.babycut.media.decode;
 
 import org.bytedeco.javacv.Frame;
 

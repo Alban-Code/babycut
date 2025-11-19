@@ -1,4 +1,4 @@
-package io.onelioh.babycut.controller;
+package io.onelioh.babycut.ui.assets;
 
 import io.onelioh.babycut.model.media.MediaInfo;
 import javafx.fxml.FXML;

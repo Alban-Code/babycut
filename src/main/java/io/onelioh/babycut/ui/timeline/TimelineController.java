@@ -1,4 +1,4 @@
-package io.onelioh.babycut.controller;
+package io.onelioh.babycut.ui.timeline;
 
 import io.onelioh.babycut.model.timeline.*;
 import javafx.fxml.FXML;
