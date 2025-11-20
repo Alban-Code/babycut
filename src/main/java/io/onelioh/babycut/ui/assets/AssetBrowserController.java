@@ -8,7 +8,7 @@ import javafx.scene.control.ListView;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class AssetBrowser {
+public class AssetBrowserController {
 
     @FXML
     private ListView<MediaAsset> assetsListView;
@@ -18,6 +18,7 @@ public class AssetBrowser {
 
     // Callback définie dans l'orchestrateur (AppController)
     private Consumer<MediaAsset> onAddToTimelineRequested;
+    private Consumer<MediaAsset> onSimpleClicked;
 
     @FXML
     private void initialize() {
@@ -37,6 +38,7 @@ public class AssetBrowser {
         assetsListView.getSelectionModel().selectedItemProperty().addListener((obs, old, asset) -> {
             if (asset != null) {
                 streamsViewController.setStreams(asset.getMediaInfo());
+                onSimpleClicked.accept(asset);
             }
         });
 
@@ -54,8 +56,16 @@ public class AssetBrowser {
         assetsListView.getItems().setAll(assets);
     }
 
+    public void addAsset(MediaAsset asset) {
+        assetsListView.getItems().add(asset);
+    }
+
     public void setOnAddToTimelineRequested(Consumer<MediaAsset> onAddToTimelineRequested) {
         this.onAddToTimelineRequested = onAddToTimelineRequested;
+    }
+
+    public void setOnSimpleClicked(Consumer<MediaAsset> cb) {
+        onSimpleClicked = cb;
     }
 
     @FXML

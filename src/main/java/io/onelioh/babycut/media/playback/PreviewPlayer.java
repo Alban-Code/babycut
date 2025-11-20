@@ -140,6 +140,18 @@ public class PreviewPlayer {
         this.onTimeChanged = onTimeChanged;
     }
 
+    public void close() {
+        stop();
+        if (playbackThread != null) {
+            try {
+                playbackThread.join(20);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        decoder.close();
+    }
+
     private void pushFrameToUi(VideoFrame frame) {
         WritableImage image = converter.toImage(frame);
         if (image == null || onFrameReady == null) return;

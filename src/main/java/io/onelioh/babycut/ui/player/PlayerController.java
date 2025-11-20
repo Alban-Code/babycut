@@ -35,7 +35,7 @@ public class PlayerController {
 
     @FXML
     private void initialize() {
-//        setControlsEnabled(false);
+        setControlsEnabled(false);
 
         videoImageView.setPreserveRatio(true);
         videoImageView.setSmooth(true);
@@ -59,7 +59,6 @@ public class PlayerController {
         // handlers slider
         timeSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
             if (onSeekRequested != null && !isChanging) {
-                System.out.println("Slider, " + timeSlider.getValue());
                 onSeekRequested.accept(timeSlider.getValue());
             }
         });
@@ -126,5 +125,8 @@ public class PlayerController {
         this.onSeekRequested = onSeekRequested;
     }
 
+    public void enableControls() {
+        setControlsEnabled(true);
+    }
 
 }
