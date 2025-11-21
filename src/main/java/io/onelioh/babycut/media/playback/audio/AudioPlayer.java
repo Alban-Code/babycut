@@ -49,4 +49,8 @@ public final class AudioPlayer {
             line = null;
         }
     }
+
+    public long getMicrosecondPosition() {
+        return line.getMicrosecondPosition();
+    }
 }

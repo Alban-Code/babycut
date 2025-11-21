@@ -5,10 +5,12 @@ import org.bytedeco.javacv.Frame;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
-public class AudioFrame {
+public class AudioFrame implements MediaFrame {
 
     private double timestampSeconds;
     private Frame rawFrame;
+
+    public AudioFrame() {}
 
     public AudioFrame(double timestampSeconds, Frame rawFrame) {
         this.timestampSeconds = timestampSeconds;
@@ -55,5 +57,15 @@ public class AudioFrame {
         }
 
         throw new IllegalStateException("Unsupported audio sample buffer type: " + buffer.getClass().getName());
+    }
+
+    @Override
+    public double getTimestampSeconds() {
+        return timestampSeconds;
+    }
+
+    @Override
+    public boolean isVideo() {
+        return false;
     }
 }

@@ -1,15 +1,13 @@
 package io.onelioh.babycut.media.playback;
 
-import io.onelioh.babycut.media.decode.AudioFrame;
-import io.onelioh.babycut.media.decode.SimpleVideoDecoder;
-import io.onelioh.babycut.media.decode.VideoFrame;
+import io.onelioh.babycut.media.decode.*;
 import io.onelioh.babycut.media.playback.audio.AudioPlayer;
 import io.onelioh.babycut.ui.player.VideoFrameToFxImageConverter;
 import javafx.application.Platform;
-import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
 public class PreviewPlayer {
@@ -18,9 +16,19 @@ public class PreviewPlayer {
     private final VideoFrameToFxImageConverter converter;
     private final AudioPlayer audioPlayer;
 
-    private Thread playbackThread;
+    private Thread producerThread;
     private volatile boolean playing = false;
     private volatile boolean running = false;
+    private volatile boolean seekInProgress = false;
+
+    private Thread audioThread;
+    private Thread videoThread;
+
+    private BlockingQueue<VideoFrame> videoQueue;
+    private BlockingQueue<AudioFrame> audioQueue;
+
+    private static final int VIDEO_QUEUE_SIZE = 120;
+    private static final int AUDIO_QUEUE_SIZE = 60;
 
     private Consumer<WritableImage> onFrameReady;
     private Consumer<Double> onTimeChanged;
@@ -32,10 +40,12 @@ public class PreviewPlayer {
         this.decoder = decoder;
         this.converter = converter;
         this.audioPlayer = audioPlayer;
+        videoQueue = new ArrayBlockingQueue<>(VIDEO_QUEUE_SIZE);
+        audioQueue = new ArrayBlockingQueue<>(AUDIO_QUEUE_SIZE);
     }
 
     public void play() {
-        if (playbackThread == null || !playbackThread.isAlive()) {
+        if (producerThread == null || !producerThread.isAlive()) {
             startPlaybackThread();
         }
         playing = true;
@@ -53,7 +63,8 @@ public class PreviewPlayer {
     }
 
     public void seek(double seconds) {
-        System.out.println("Je suis dans le seek");
+        seekInProgress = true;
+        audioPlayer.stop();
         if (seconds < 0) seconds = 0;
         pendingSeekSeconds = seconds;
     }
@@ -63,43 +74,54 @@ public class PreviewPlayer {
     }
 
     public void start() {
-        if (playbackThread != null && playbackThread.isAlive()) return;
+        if (producerThread != null && producerThread.isAlive()) return;
         startPlaybackThread();
         playing = false;
     }
 
-    private void playbackLoop() {
-
+    private void producerLoop() {
         while (running) {
-            Double seekSeconds = pendingSeekSeconds;
-            if (seekSeconds != null) {
-                System.out.println("seek de fou" + seekSeconds);
+            Double seekTarget = pendingSeekSeconds;
+            if (seekTarget != null) {
                 pendingSeekSeconds = null;
-                audioPlayer.stop();
 
-                decoder.seek(seekSeconds);
+                videoQueue.clear();
+                audioQueue.clear();
 
-                VideoFrame frame = decoder.readNextFrame();
-                AudioFrame audioFrame = decoder.readNextAudioFrame();
+                decoder.seek(seekTarget);
 
-                if (frame != null) {
-                    pushFrameToUi(frame);
+                try {
+                    audioQueue.put(new SeekMarker());
+                } catch(Exception ignored) {
+
                 }
 
-                if (audioFrame != null) {
-                    audioPlayer.openIfNeeded(audioFrame.sampleRate(), audioFrame.channels());
-                    byte[] pcm = audioFrame.getPcm();
-                    CompletableFuture.runAsync(() -> audioPlayer.writeSamples(pcm));
-                }
 
-                if (onTimeChanged != null && frame != null) {
-                    double currentTime = frame.getTimestampSeconds();
-                    Platform.runLater(() -> onTimeChanged.accept(currentTime));
-                }
+                seekInProgress = false;
 
                 continue;
             }
 
+            MediaFrame frame = decoder.readNextFrame();
+            if (frame == null) {
+                break;
+            }
+            try {
+                if (frame.isVideo()) {
+                    videoQueue.put((VideoFrame) frame);
+                } else {
+                    audioQueue.put((AudioFrame) frame);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+
+        }
+    }
+
+    private void videoConsumerLoop() {
+        while(running) {
             if (!playing) {
                 try {
                     Thread.sleep(10);
@@ -108,53 +130,69 @@ public class PreviewPlayer {
                 continue;
             }
 
-            VideoFrame frame = decoder.readNextFrame();
-            AudioFrame audioFrame = decoder.readNextAudioFrame();
+            try {
+                VideoFrame vFrame = videoQueue.take();
+                long videoTimestampMicroseconds = (long) vFrame.getTimestampSeconds() * 1_000_000;
+                long audioTimeMicroseconds = audioPlayer.getMicrosecondPosition();
+                long latency = audioTimeMicroseconds - videoTimestampMicroseconds;
+                final long TOLERANCE_MICROSECONDS = 66000;
+                if (latency < -TOLERANCE_MICROSECONDS ) {
+                    // We are too late, skip this frame
+                    System.out.println("Skipping frame due to audio latency: " + latency);
+                } else if ( latency > TOLERANCE_MICROSECONDS ) {
+                    // We are in advance, wait
+                    Thread.sleep(-latency / 1000);
+                    pushFrameToUi(vFrame);
 
-            if (audioFrame != null) {
-                audioPlayer.openIfNeeded(audioFrame.sampleRate(), audioFrame.channels());
-                byte[] pcm = audioFrame.getPcm();
-                CompletableFuture.runAsync(() -> audioPlayer.writeSamples(pcm));
+                } else {
+                    pushFrameToUi(vFrame);
+                }
+            } catch(InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
+        }
+    }
 
-            if (frame == null) {
-                playing = false;
-
-                if(onEndOfMedia != null) {
-                    Platform.runLater(onEndOfMedia);
+    private void audioConsumerLoop() {
+        while(running) {
+            if (!playing) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ignored) {
                 }
                 continue;
             }
-
-
-
-            WritableImage image = converter.toImage(frame);
-            if (image == null) {
-                continue;
-            }
-
-            pushFrameToUi(frame);
-
-            if (onTimeChanged != null) {
-                double currentTime = frame.getTimestampSeconds();
-                Platform.runLater(() -> onTimeChanged.accept(currentTime));
-            }
-
-            // tempo approximative : ex. 30 fps → 33 ms
             try {
-                Thread.sleep(16);
-            } catch (InterruptedException ignored) {
+                AudioFrame aFrame = audioQueue.take();
+
+                if (aFrame instanceof SeekMarker) {
+                    audioPlayer.stop();  // Flush du buffer
+                    continue;
+                }
+
+                audioPlayer.openIfNeeded(aFrame.sampleRate(), aFrame.channels());
+                audioPlayer.writeSamples(aFrame.getPcm());
+            } catch(InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
-
-
         }
     }
 
     private void startPlaybackThread() {
         running = true;
-        playbackThread = new Thread(this::playbackLoop);
-        playbackThread.setDaemon(true);
-        playbackThread.start();
+        producerThread = new Thread(this::producerLoop, "Producer Thread");
+        producerThread.setDaemon(true);
+        producerThread.start();
+
+        videoThread = new Thread(this::videoConsumerLoop, "Video Consumer Thread");
+        videoThread.setDaemon(true);
+        videoThread.start();
+
+        audioThread = new Thread(this::audioConsumerLoop, "Audio Consumer Thread");
+        audioThread.setDaemon(true);
+        audioThread.start();
     }
 
     public void setOnEndOfMedia(Runnable onEndOfMedia) {
@@ -167,9 +205,9 @@ public class PreviewPlayer {
 
     public void close() {
         stop();
-        if (playbackThread != null) {
+        if (producerThread != null) {
             try {
-                playbackThread.join(20);
+                producerThread.join(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

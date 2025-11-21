@@ -2,7 +2,7 @@ package io.onelioh.babycut.media.decode;
 
 import org.bytedeco.javacv.Frame;
 
-public class VideoFrame {
+public class VideoFrame implements MediaFrame {
     private int width;
     private int height;
     private double timestampSeconds;
@@ -25,6 +25,11 @@ public class VideoFrame {
 
     public double getTimestampSeconds() {
         return timestampSeconds;
+    }
+
+    @Override
+    public boolean isVideo() {
+        return true;
     }
 
     public Frame getRawFrame() {

@@ -1,9 +1,6 @@
 package io.onelioh.babycut.infra.javacv;
 
-import io.onelioh.babycut.media.decode.AudioFrame;
-import io.onelioh.babycut.media.decode.SimpleVideoDecoder;
-import io.onelioh.babycut.media.decode.VideoFrame;
-import io.onelioh.babycut.media.decode.VideoReaderState;
+import io.onelioh.babycut.media.decode.*;
 import io.onelioh.babycut.model.datas.MediaData;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
@@ -52,42 +49,33 @@ public class JavaCvVideoDecoder implements SimpleVideoDecoder {
     }
 
     @Override
-    public VideoFrame readNextFrame() {
+    public MediaFrame readNextFrame() {
         if (state != VideoReaderState.STARTED) return null;
 
         try {
-            Frame frame = frameGrabber.grabImage();
+            Frame frame = frameGrabber.grab();
             if (frame == null) {
                 state = VideoReaderState.FINISHED;
                 return null;
             }
+
             double timestampSeconds = frameGrabber.getTimestamp() / 1_000_000.0;
-            VideoFrame vFrame = new VideoFrame(frame, timestampSeconds);
-            framesRead++;
-            return vFrame;
+
+            if (frame.image != null) {
+                VideoFrame vFrame = new VideoFrame(frame, timestampSeconds);
+                framesRead++;
+                return vFrame;
+            } else if (frame.samples != null) {
+                AudioFrame aFrame = new AudioFrame( timestampSeconds, frame);
+                return aFrame;
+            }
+
+
+            return null;
 
         } catch (Exception e) {
             e.printStackTrace();
             state = VideoReaderState.CLOSED;
-            return null;
-        }
-    }
-
-    @Override
-    public AudioFrame readNextAudioFrame() {
-        if (state != VideoReaderState.STARTED) return null;
-
-        try {
-            Frame frame = frameGrabber.grabSamples();
-            if (frame == null) {
-                return null;
-            }
-            double timestampSeconds = frameGrabber.getTimestamp() / 1_000_000.0;
-            AudioFrame aFrame = new AudioFrame(timestampSeconds, frame);
-            return aFrame;
-
-        } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }

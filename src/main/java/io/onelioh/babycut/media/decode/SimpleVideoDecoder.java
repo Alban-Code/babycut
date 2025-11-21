@@ -6,9 +6,7 @@ public interface SimpleVideoDecoder {
 
     void start();
 
-    VideoFrame readNextFrame();
-
-    AudioFrame readNextAudioFrame();
+    MediaFrame readNextFrame();
 
     void close();
 
