@@ -1,6 +1,7 @@
 package io.onelioh.babycut.media.playback;
 
 import io.onelioh.babycut.infra.javacv.JavaCvVideoDecoder;
+import io.onelioh.babycut.media.playback.audio.AudioPlayer;
 import io.onelioh.babycut.model.media.MediaAsset;
 import io.onelioh.babycut.ui.player.VideoFrameToFxImageConverter;
 
@@ -10,8 +11,9 @@ public class JavaCvPreviewPlayerFactory implements PreviewPlayerFactory{
         JavaCvVideoDecoder decoder = new JavaCvVideoDecoder(asset.getPath().toString());
         decoder.openMedia();
         VideoFrameToFxImageConverter converter = new VideoFrameToFxImageConverter();
+        AudioPlayer audioPlayer = new AudioPlayer();
 
-        return new PreviewPlayer(decoder, converter);
+        return new PreviewPlayer(decoder, converter, audioPlayer);
     }
 
     @Override

@@ -1,11 +1,15 @@
 package io.onelioh.babycut.infra.javacv;
 
+import io.onelioh.babycut.media.decode.AudioFrame;
 import io.onelioh.babycut.media.decode.SimpleVideoDecoder;
 import io.onelioh.babycut.media.decode.VideoFrame;
 import io.onelioh.babycut.media.decode.VideoReaderState;
 import io.onelioh.babycut.model.datas.MediaData;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
+
+import static org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_S16;
 
 import java.io.File;
 
@@ -27,6 +31,10 @@ public class JavaCvVideoDecoder implements SimpleVideoDecoder {
     public void openMedia() {
         File file = new File(path);
         frameGrabber = new FFmpegFrameGrabber(file);
+        frameGrabber.setSampleFormat(AV_SAMPLE_FMT_S16);
+        frameGrabber.setSampleMode(FrameGrabber.SampleMode.SHORT);
+        frameGrabber.setAudioChannels(2);
+        frameGrabber.setSampleRate(44100);
         start();
     }
 
@@ -45,7 +53,6 @@ public class JavaCvVideoDecoder implements SimpleVideoDecoder {
 
     @Override
     public VideoFrame readNextFrame() {
-        System.out.println("Sisisisi, " + state);
         if (state != VideoReaderState.STARTED) return null;
 
         try {
@@ -62,6 +69,25 @@ public class JavaCvVideoDecoder implements SimpleVideoDecoder {
         } catch (Exception e) {
             e.printStackTrace();
             state = VideoReaderState.CLOSED;
+            return null;
+        }
+    }
+
+    @Override
+    public AudioFrame readNextAudioFrame() {
+        if (state != VideoReaderState.STARTED) return null;
+
+        try {
+            Frame frame = frameGrabber.grabSamples();
+            if (frame == null) {
+                return null;
+            }
+            double timestampSeconds = frameGrabber.getTimestamp() / 1_000_000.0;
+            AudioFrame aFrame = new AudioFrame(timestampSeconds, frame);
+            return aFrame;
+
+        } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }

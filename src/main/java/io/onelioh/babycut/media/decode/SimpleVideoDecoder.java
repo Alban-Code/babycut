@@ -8,6 +8,8 @@ public interface SimpleVideoDecoder {
 
     VideoFrame readNextFrame();
 
+    AudioFrame readNextAudioFrame();
+
     void close();
 
     void seek(double seconds);

@@ -1,18 +1,22 @@
 package io.onelioh.babycut.media.playback;
 
+import io.onelioh.babycut.media.decode.AudioFrame;
 import io.onelioh.babycut.media.decode.SimpleVideoDecoder;
 import io.onelioh.babycut.media.decode.VideoFrame;
+import io.onelioh.babycut.media.playback.audio.AudioPlayer;
 import io.onelioh.babycut.ui.player.VideoFrameToFxImageConverter;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class PreviewPlayer {
 
     private final SimpleVideoDecoder decoder;
     private final VideoFrameToFxImageConverter converter;
+    private final AudioPlayer audioPlayer;
 
     private Thread playbackThread;
     private volatile boolean playing = false;
@@ -24,9 +28,10 @@ public class PreviewPlayer {
 
     private volatile Double pendingSeekSeconds = null;
 
-    public PreviewPlayer(SimpleVideoDecoder decoder, VideoFrameToFxImageConverter converter) {
+    public PreviewPlayer(SimpleVideoDecoder decoder, VideoFrameToFxImageConverter converter, AudioPlayer audioPlayer) {
         this.decoder = decoder;
         this.converter = converter;
+        this.audioPlayer = audioPlayer;
     }
 
     public void play() {
@@ -38,11 +43,13 @@ public class PreviewPlayer {
 
     public void pause() {
         playing = false;
+        audioPlayer.stop();
     }
 
     public void stop() {
         running = false;
         playing = false;
+        audioPlayer.stop();
     }
 
     public void seek(double seconds) {
@@ -68,13 +75,21 @@ public class PreviewPlayer {
             if (seekSeconds != null) {
                 System.out.println("seek de fou" + seekSeconds);
                 pendingSeekSeconds = null;
+                audioPlayer.stop();
 
                 decoder.seek(seekSeconds);
 
                 VideoFrame frame = decoder.readNextFrame();
+                AudioFrame audioFrame = decoder.readNextAudioFrame();
 
                 if (frame != null) {
                     pushFrameToUi(frame);
+                }
+
+                if (audioFrame != null) {
+                    audioPlayer.openIfNeeded(audioFrame.sampleRate(), audioFrame.channels());
+                    byte[] pcm = audioFrame.getPcm();
+                    CompletableFuture.runAsync(() -> audioPlayer.writeSamples(pcm));
                 }
 
                 if (onTimeChanged != null && frame != null) {
@@ -94,6 +109,14 @@ public class PreviewPlayer {
             }
 
             VideoFrame frame = decoder.readNextFrame();
+            AudioFrame audioFrame = decoder.readNextAudioFrame();
+
+            if (audioFrame != null) {
+                audioPlayer.openIfNeeded(audioFrame.sampleRate(), audioFrame.channels());
+                byte[] pcm = audioFrame.getPcm();
+                CompletableFuture.runAsync(() -> audioPlayer.writeSamples(pcm));
+            }
+
             if (frame == null) {
                 playing = false;
 
@@ -102,6 +125,8 @@ public class PreviewPlayer {
                 }
                 continue;
             }
+
+
 
             WritableImage image = converter.toImage(frame);
             if (image == null) {
@@ -149,6 +174,7 @@ public class PreviewPlayer {
                 e.printStackTrace();
             }
         }
+        audioPlayer.close();
         decoder.close();
     }
 
