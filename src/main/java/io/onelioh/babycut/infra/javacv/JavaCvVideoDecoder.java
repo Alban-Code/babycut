@@ -2,6 +2,7 @@ package io.onelioh.babycut.infra.javacv;
 
 import io.onelioh.babycut.media.decode.*;
 import io.onelioh.babycut.model.datas.MediaData;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
@@ -28,10 +29,11 @@ public class JavaCvVideoDecoder implements SimpleVideoDecoder {
     public void openMedia() {
         File file = new File(path);
         frameGrabber = new FFmpegFrameGrabber(file);
+        // Configuration du format de pixel AVANT start()
+        frameGrabber.setPixelFormat(avutil.AV_PIX_FMT_BGR24);
+        // Configuration audio pour le format de sortie
         frameGrabber.setSampleFormat(AV_SAMPLE_FMT_S16);
         frameGrabber.setSampleMode(FrameGrabber.SampleMode.SHORT);
-        frameGrabber.setAudioChannels(2);
-        frameGrabber.setSampleRate(44100);
         start();
     }
 
@@ -60,13 +62,21 @@ public class JavaCvVideoDecoder implements SimpleVideoDecoder {
             }
 
             double timestampSeconds = frameGrabber.getTimestamp() / 1_000_000.0;
+            // System.out.println("Frame timestamp: " + timestampSeconds);
 
             if (frame.image != null) {
+                // Valider les dimensions avant de créer le VideoFrame
+                if (frame.imageWidth <= 0 || frame.imageHeight <= 0) {
+                    System.err.println("[DECODER] Invalid video frame dimensions: " + frame.imageWidth + "x" + frame.imageHeight);
+                    System.err.println("[DECODER] Frame info - channels: " + frame.imageChannels + ", stride: " + frame.imageStride);
+                    // Ignorer cette frame et lire la suivante
+                    return readNextFrame();
+                }
                 VideoFrame vFrame = new VideoFrame(frame, timestampSeconds);
                 framesRead++;
                 return vFrame;
             } else if (frame.samples != null) {
-                AudioFrame aFrame = new AudioFrame( timestampSeconds, frame);
+                AudioFrame aFrame = new AudioFrame(timestampSeconds, frame ,frameGrabber.getSampleRate(), frameGrabber.getAudioChannels());
                 return aFrame;
             }
 
@@ -140,4 +150,5 @@ public class JavaCvVideoDecoder implements SimpleVideoDecoder {
             state = VideoReaderState.CLOSED;
         }
     }
+
 }

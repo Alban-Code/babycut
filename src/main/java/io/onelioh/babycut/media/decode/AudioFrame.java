@@ -9,19 +9,25 @@ public class AudioFrame implements MediaFrame {
 
     private double timestampSeconds;
     private Frame rawFrame;
+    private int nbSamples;
+    private int sampleRate;
+    private int channels;
 
     public AudioFrame() {}
 
-    public AudioFrame(double timestampSeconds, Frame rawFrame) {
+    public AudioFrame(double timestampSeconds, Frame rawFrame, int sampleRate, int channels) {
         this.timestampSeconds = timestampSeconds;
         this.rawFrame = rawFrame;
+        this.nbSamples = rawFrame.samples != null ? rawFrame.samples[0].limit() : 0;
+        this.sampleRate = sampleRate;
+        this.channels = channels;
     }
 
-    public int sampleRate() { return rawFrame.sampleRate; }
+    public int getSampleRate() { return sampleRate; }
 
-    public int channels() { return rawFrame.audioChannels; }
+    public int getChannels() { return channels; }
 
-    public int nbSamples() { return rawFrame.samples != null ? rawFrame.samples[0].limit() : 0; }
+    public int getNbSamples() { return nbSamples; }
 
     public ByteBuffer interleavedSamples() { return (ByteBuffer) rawFrame.samples[0]; }
 

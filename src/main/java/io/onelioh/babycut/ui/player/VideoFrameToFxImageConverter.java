@@ -1,31 +1,41 @@
 package io.onelioh.babycut.ui.player;
 
 import io.onelioh.babycut.media.decode.VideoFrame;
-import javafx.embed.swing.SwingFXUtils;
-
-import javafx.scene.image.WritableImage;
-import org.bytedeco.javacv.Java2DFrameConverter;
-import java.awt.image.BufferedImage;
+import javafx.scene.image.Image;
+import org.bytedeco.javacv.JavaFXFrameConverter;
 
 public class VideoFrameToFxImageConverter {
 
-    private Java2DFrameConverter converter;
-    private WritableImage image;
+    private JavaFXFrameConverter converter;
 
     public VideoFrameToFxImageConverter() {
-        converter = new Java2DFrameConverter();
+        converter = new JavaFXFrameConverter();
     }
 
-    public WritableImage toImage(VideoFrame frame) {
-        BufferedImage bImage = converter.convert(frame.getRawFrame());
-        if (bImage == null) return null;
-        int w = bImage.getWidth();
-        int h = bImage.getHeight();
-        if (image == null || image.getHeight() != h || image.getWidth() != w) {
-            image = new WritableImage(w, h);
+    public Image toImage(VideoFrame frame) {
+        try {
+            // Valider les dimensions avant conversion
+            if (frame.getWidth() <= 0 || frame.getHeight() <= 0) {
+                System.err.println("[CONVERTER] Invalid frame dimensions: " + frame.getWidth() + "x" + frame.getHeight());
+                return null;
+            }
+            
+            // Vérifier que le frame a des données image
+            if (frame.getRawFrame() == null || frame.getRawFrame().image == null) {
+                System.err.println("[CONVERTER] Frame has no image data");
+                return null;
+            }
+            
+            Image image = converter.convert(frame.getRawFrame());
+            if (image == null) {
+                System.out.println("[CONVERTER] Conversion failed - Image is null");
+            }
+            return image;
+        } catch (Exception e) {
+            System.err.println("[CONVERTER] Error converting frame: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
-        SwingFXUtils.toFXImage(bImage, image);
-        return image;
     }
 }
 

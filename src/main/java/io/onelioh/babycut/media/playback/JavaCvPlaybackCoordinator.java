@@ -1,19 +1,16 @@
 package io.onelioh.babycut.media.playback;
 
-import io.onelioh.babycut.infra.javacv.JavaCvVideoDecoder;
 import io.onelioh.babycut.model.media.MediaAsset;
-import io.onelioh.babycut.ui.player.VideoFrameToFxImageConverter;
-import javafx.scene.image.WritableImage;
+import javafx.scene.image.Image;
 
 import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
 
 public class JavaCvPlaybackCoordinator implements PlaybackCoordinator{
 
     private PreviewPlayerFactory playerFactory;
     private PreviewPlayer player;
     private double durationSeconds = 0.0;
-    private Consumer<WritableImage> readyListener;
+    private Consumer<Image> readyListener;
     private Consumer<Double> timeChangedListener;
     private Runnable endListener;
 
@@ -73,7 +70,7 @@ public class JavaCvPlaybackCoordinator implements PlaybackCoordinator{
     }
 
     @Override
-    public void setOnReady(Consumer<WritableImage> listener) {
+    public void setOnReady(Consumer<Image> listener) {
         readyListener = listener;
         if (player != null) {
             player.setOnFrameReady(listener);

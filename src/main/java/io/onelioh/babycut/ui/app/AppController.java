@@ -45,8 +45,6 @@ public class AppController {
 
     @FXML
     private void initialize() {
-        System.out.println("Init de app controller");
-        //
 
         projectContext = new DefaultProjectContext();
         projectContext.createProject();
@@ -99,7 +97,7 @@ public class AppController {
 
     public void handlePlayTimeline() {
         if (projectContext.getActiveTimeline() == null) {
-            System.out.println("Pas de timeline active, rien à lire.");
+            // System.out.println("Pas de timeline active, rien à lire.");
             return;
         }
 
@@ -176,8 +174,6 @@ public class AppController {
         AssetType type = mediaInfo.getAudioStreams().isEmpty() ? AssetType.AUDIO : AssetType.VIDEO;
         MediaAsset asset = new MediaAsset(file.toPath(), type, mediaInfo);
 
-        playbackCoordinator.load(asset);
-
         playbackCoordinator.setOnTimeChanged(currentSec -> {
             playerViewController.updateTime(currentSec, playbackCoordinator.getDurationSeconds());
         });
@@ -187,6 +183,10 @@ public class AppController {
         });
 
         playbackCoordinator.setOnReady(image -> playerViewController.setImage(image));
+
+        playbackCoordinator.load(asset);
+
+
 
         projectContext.addMediaAsset(asset);
     }

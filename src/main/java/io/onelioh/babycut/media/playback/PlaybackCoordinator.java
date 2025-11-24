@@ -1,10 +1,11 @@
 package io.onelioh.babycut.media.playback;
 
 import io.onelioh.babycut.model.media.MediaAsset;
-import javafx.scene.image.WritableImage;
+import javafx.scene.image.Image;
+
 
 import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
+
 
 public interface PlaybackCoordinator {
     void load(MediaAsset asset);
@@ -21,7 +22,7 @@ public interface PlaybackCoordinator {
 
     double getDurationSeconds();
 
-    void setOnReady(Consumer<WritableImage> listener);
+    void setOnReady(Consumer<Image> listener);
 
     void setOnTimeChanged(Consumer<Double> listener);
 

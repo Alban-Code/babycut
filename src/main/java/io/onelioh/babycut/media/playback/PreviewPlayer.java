@@ -4,7 +4,7 @@ import io.onelioh.babycut.media.decode.*;
 import io.onelioh.babycut.media.playback.audio.AudioPlayer;
 import io.onelioh.babycut.ui.player.VideoFrameToFxImageConverter;
 import javafx.application.Platform;
-import javafx.scene.image.WritableImage;
+import javafx.scene.image.Image;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -30,9 +30,13 @@ public class PreviewPlayer {
     private static final int VIDEO_QUEUE_SIZE = 120;
     private static final int AUDIO_QUEUE_SIZE = 60;
 
-    private Consumer<WritableImage> onFrameReady;
+    private volatile long currentAudioTimeMicroseconds = 0;
+
+    private Consumer<Image> onFrameReady;
     private Consumer<Double> onTimeChanged;
     private Runnable onEndOfMedia;
+
+    int currentLol = 0;
 
     private volatile Double pendingSeekSeconds = null;
 
@@ -69,7 +73,7 @@ public class PreviewPlayer {
         pendingSeekSeconds = seconds;
     }
 
-    public void setOnFrameReady(Consumer<WritableImage> cb) {
+    public void setOnFrameReady(Consumer<Image> cb) {
         onFrameReady = cb;
     }
 
@@ -90,9 +94,11 @@ public class PreviewPlayer {
 
                 decoder.seek(seekTarget);
 
+                currentAudioTimeMicroseconds = (long) (seekTarget * 1_000_000L);
+
                 try {
                     audioQueue.put(new SeekMarker());
-                } catch(Exception ignored) {
+                } catch (Exception ignored) {
 
                 }
 
@@ -108,8 +114,10 @@ public class PreviewPlayer {
             }
             try {
                 if (frame.isVideo()) {
+                    System.out.println("[PRODUCER] Pushing video frame, queue size: " + videoQueue.size());
                     videoQueue.put((VideoFrame) frame);
                 } else {
+                    System.out.println("[PRODUCER] Oushing audio frame, queue size: " + audioQueue.size());
                     audioQueue.put((AudioFrame) frame);
                 }
             } catch (InterruptedException e) {
@@ -121,7 +129,7 @@ public class PreviewPlayer {
     }
 
     private void videoConsumerLoop() {
-        while(running) {
+        while (running) {
             if (!playing) {
                 try {
                     Thread.sleep(10);
@@ -131,23 +139,27 @@ public class PreviewPlayer {
             }
 
             try {
+                System.out.println("[VIDEO] Taking frame, queue size:" + videoQueue.size());
                 VideoFrame vFrame = videoQueue.take();
                 long videoTimestampMicroseconds = (long) vFrame.getTimestampSeconds() * 1_000_000;
-                long audioTimeMicroseconds = audioPlayer.getMicrosecondPosition();
-                long latency = audioTimeMicroseconds - videoTimestampMicroseconds;
+                // System.out.println("videoTimestampsMicro: " + videoTimestampMicroseconds);
+                long audioTimeMicroseconds = currentAudioTimeMicroseconds;
+                // System.out.println("aTimestampsMicro: " + audioTimeMicroseconds);
+                long videoAdvanceMicroseconds = videoTimestampMicroseconds - audioTimeMicroseconds;
                 final long TOLERANCE_MICROSECONDS = 66000;
-                if (latency < -TOLERANCE_MICROSECONDS ) {
+                if (videoAdvanceMicroseconds < -TOLERANCE_MICROSECONDS) {
                     // We are too late, skip this frame
-                    System.out.println("Skipping frame due to audio latency: " + latency);
-                } else if ( latency > TOLERANCE_MICROSECONDS ) {
+                    // System.out.println("Skipping frame due to audio latency: " + videoAdvanceMicroseconds);
+                    // System.out.println("nombre de fois ou c'est arrivé: " + ++currentLol);
+                } else if (videoAdvanceMicroseconds > TOLERANCE_MICROSECONDS) {
                     // We are in advance, wait
-                    Thread.sleep(-latency / 1000);
+                    // Thread.sleep(videoAdvanceMicroseconds / 1000);
                     pushFrameToUi(vFrame);
 
                 } else {
                     pushFrameToUi(vFrame);
                 }
-            } catch(InterruptedException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
@@ -155,7 +167,7 @@ public class PreviewPlayer {
     }
 
     private void audioConsumerLoop() {
-        while(running) {
+        while (running) {
             if (!playing) {
                 try {
                     Thread.sleep(10);
@@ -164,16 +176,21 @@ public class PreviewPlayer {
                 continue;
             }
             try {
+                System.out.println("[AUDIO] Taking frame, queue size:" + audioQueue.size());
                 AudioFrame aFrame = audioQueue.take();
 
                 if (aFrame instanceof SeekMarker) {
                     audioPlayer.stop();  // Flush du buffer
-                    continue;
+                } else {
+                    audioPlayer.openIfNeeded(aFrame.getSampleRate(), aFrame.getChannels());
+                    audioPlayer.writeSamples(aFrame.getPcm());
+
+                    long frameDurationMicroseconds = calculateFrameDuration(aFrame);
+                    currentAudioTimeMicroseconds += frameDurationMicroseconds;
                 }
 
-                audioPlayer.openIfNeeded(aFrame.sampleRate(), aFrame.channels());
-                audioPlayer.writeSamples(aFrame.getPcm());
-            } catch(InterruptedException e) {
+
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
@@ -217,10 +234,25 @@ public class PreviewPlayer {
     }
 
     private void pushFrameToUi(VideoFrame frame) {
-        WritableImage image = converter.toImage(frame);
-        if (image == null || onFrameReady == null) return;
+        System.out.println("[UI] pushFrameToUi called");
+        Image image = converter.toImage(frame);
+        System.out.println("[UI] image converted: " + (image != null));
+        if (image == null || onFrameReady == null) {
+            System.out.println("[UI] Skipping: image=" + (image != null) + ", callback=" + (onFrameReady != null));
+            return;
+        }
 
-        WritableImage finalImage = image;
-        Platform.runLater(() -> onFrameReady.accept(finalImage));
+        Image finalImage = image;
+        Platform.runLater(() -> {
+            System.out.println("[UI] Platform.runLater executing");
+            onFrameReady.accept(finalImage);
+        });
+    }
+
+    private long calculateFrameDuration(AudioFrame frame) {
+        int nbSamples = frame.getNbSamples();
+        int sampleRate = frame.getSampleRate();
+
+        return (nbSamples * 1_000_000L) / sampleRate;
     }
 }
