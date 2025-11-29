@@ -3,6 +3,7 @@ package io.onelioh.babycut.media.decode;
 import org.bytedeco.javacv.Frame;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 
 public class AudioFrame implements MediaFrame {
@@ -14,6 +15,10 @@ public class AudioFrame implements MediaFrame {
     private int channels;
 
     public AudioFrame() {}
+
+    public AudioFrame(double timestampSeconds) {
+        this.timestampSeconds = timestampSeconds;
+    }
 
     public AudioFrame(double timestampSeconds, Frame rawFrame, int sampleRate, int channels) {
         this.timestampSeconds = timestampSeconds;
@@ -41,30 +46,24 @@ public class AudioFrame implements MediaFrame {
             return new byte[0];
         }
 
-        if (buffer instanceof ByteBuffer byteBuffer) {
-            ByteBuffer duplicate = byteBuffer.duplicate();
-            duplicate.rewind();
-            byte[] pcm = new byte[duplicate.remaining()];
-            duplicate.get(pcm);
-            return pcm;
-        }
-
         if (buffer instanceof ShortBuffer shortBuffer) {
             ShortBuffer duplicate = shortBuffer.duplicate();
             duplicate.rewind();
+
+            // On prépare un tableau de bytes (2x plus grand car 1 short = 2 bytes)
             byte[] pcm = new byte[duplicate.remaining() * 2];
-            int index = 0;
-            while (duplicate.hasRemaining()) {
-                short sample = duplicate.get();
-                pcm[index++] = (byte) (sample & 0xFF);          // LSB
-                pcm[index++] = (byte) ((sample >>> 8) & 0xFF);  // MSB
-            }
+
+            // LE SECRET EST ICI : On utilise ByteBuffer pour gérer l'Endianness
+            ByteBuffer dst = ByteBuffer.wrap(pcm).order(ByteOrder.LITTLE_ENDIAN);
+
+            // On verse les shorts dans le ByteBuffer, qui va les ranger proprement en bytes
+            dst.asShortBuffer().put(duplicate);
+
             return pcm;
         }
 
-        throw new IllegalStateException("Unsupported audio sample buffer type: " + buffer.getClass().getName());
+        return new byte[0];
     }
-
     @Override
     public double getTimestampSeconds() {
         return timestampSeconds;
@@ -73,5 +72,22 @@ public class AudioFrame implements MediaFrame {
     @Override
     public boolean isVideo() {
         return false;
+    }
+
+    @Override
+    public void close() {
+        rawFrame.close();
+    }
+
+    public static AudioFrame endMarker() {
+        return new AudioFrame(Double.MAX_VALUE);
+    }
+
+    public static AudioSeekMarker seekMarker(double seconds) {
+        return new AudioSeekMarker(seconds);
+    }
+
+    public Frame getRawFrame() {
+        return rawFrame;
     }
 }

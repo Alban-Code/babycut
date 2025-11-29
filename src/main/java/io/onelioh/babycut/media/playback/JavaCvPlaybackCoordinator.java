@@ -35,7 +35,6 @@ public class JavaCvPlaybackCoordinator implements PlaybackCoordinator{
         if (endListener != null) {
             player.setOnEndOfMedia(endListener);
         }
-        player.start();
         player.seek(0.0);
     }
 

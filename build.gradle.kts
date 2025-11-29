@@ -43,7 +43,8 @@ dependencies {
 
 application {
     mainClass.set("io.onelioh.babycut.Main")
-    //mainClass.set("io.onelioh.babycut.sandbox.TestVideoPlayerApp")
+    // mainClass.set("io.onelioh.babycut.sandbox.TestVideoPlayerApp")
+    // mainClass.set("io.onelioh.babycut.sandbox.JavaFXPlayer")
     // Ajoute ça pour être sûr que les modules JavaFX sont chargés :
     applicationDefaultJvmArgs = listOf("--add-modules=javafx.controls,javafx.media,javafx.fxml,javafx.swing")
 }

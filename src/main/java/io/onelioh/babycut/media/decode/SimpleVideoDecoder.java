@@ -4,7 +4,7 @@ public interface SimpleVideoDecoder {
 
     void openMedia();
 
-    void start();
+    void start() throws Exception;
 
     MediaFrame readNextFrame();
 

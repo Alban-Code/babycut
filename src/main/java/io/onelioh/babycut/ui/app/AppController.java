@@ -84,6 +84,16 @@ public class AppController {
             playbackCoordinator.load(asset);
         });
 
+        playbackCoordinator.setOnTimeChanged(currentSec -> {
+            playerViewController.updateTime(currentSec, playbackCoordinator.getDurationSeconds());
+        });
+
+        playbackCoordinator.setOnEndOfMedia(() -> {
+            playerViewController.updateTime(0.0, playbackCoordinator.getDurationSeconds());
+        });
+
+        playbackCoordinator.setOnReady(image -> playerViewController.setImage(image));
+
     }
 
     public void handleNewProject() {
@@ -174,19 +184,7 @@ public class AppController {
         AssetType type = mediaInfo.getAudioStreams().isEmpty() ? AssetType.AUDIO : AssetType.VIDEO;
         MediaAsset asset = new MediaAsset(file.toPath(), type, mediaInfo);
 
-        playbackCoordinator.setOnTimeChanged(currentSec -> {
-            playerViewController.updateTime(currentSec, playbackCoordinator.getDurationSeconds());
-        });
-
-        playbackCoordinator.setOnEndOfMedia(() -> {
-            playerViewController.updateTime(0.0, playbackCoordinator.getDurationSeconds());
-        });
-
-        playbackCoordinator.setOnReady(image -> playerViewController.setImage(image));
-
         playbackCoordinator.load(asset);
-
-
 
         projectContext.addMediaAsset(asset);
     }

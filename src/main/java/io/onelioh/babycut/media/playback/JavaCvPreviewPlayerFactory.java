@@ -20,6 +20,6 @@ public class JavaCvPreviewPlayerFactory implements PreviewPlayerFactory{
     public void dispose(PreviewPlayer player) {
         if (player == null) return;
 
-        player.close();
+        player.stop();
     }
 }

@@ -5,4 +5,6 @@ public interface MediaFrame {
 
     boolean isVideo();
 
+    void close();
+
 }

@@ -8,6 +8,10 @@ public class VideoFrame implements MediaFrame {
     private double timestampSeconds;
     private Frame rawFrame;
 
+    public VideoFrame(double timestampSeconds) {
+        this.timestampSeconds = timestampSeconds;
+    }
+
     public VideoFrame(Frame frame, double timestampSeconds) {
         width = frame.imageWidth;
         height = frame.imageHeight;
@@ -34,5 +38,18 @@ public class VideoFrame implements MediaFrame {
 
     public Frame getRawFrame() {
         return rawFrame;
+    }
+
+    @Override
+    public void close() {
+        rawFrame.close();
+    }
+
+    public static VideoFrame endMarker() {
+        return new VideoFrame(Double.MAX_VALUE);
+    }
+
+    public static VideoSeekMarker seekMarker(double seconds) {
+        return new VideoSeekMarker(seconds);
     }
 }
