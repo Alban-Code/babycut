@@ -27,11 +27,11 @@ public class Project {
     }
 
     public void setTimelines(List<Timeline> timelines) {
-        timelines = timelines;
+        this.timelines = new ArrayList<>(timelines);
     }
 
     public void setMediaAssets(List<MediaAsset> mediaAssets) {
-        mediaAssets = mediaAssets;
+        this.mediaAssets = new ArrayList<>(mediaAssets);
     }
 
     public void addMediaAsset(MediaAsset newMediaAsset) {

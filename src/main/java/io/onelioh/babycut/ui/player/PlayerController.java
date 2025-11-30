@@ -1,6 +1,5 @@
 package io.onelioh.babycut.ui.player;
 
-import io.onelioh.babycut.media.playback.PreviewPlayer;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -9,9 +8,6 @@ import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
-import javafx.util.Duration;
 
 import java.util.function.Consumer;
 

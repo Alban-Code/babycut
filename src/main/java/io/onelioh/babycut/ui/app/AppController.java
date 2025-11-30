@@ -2,10 +2,9 @@ package io.onelioh.babycut.ui.app;
 
 import io.onelioh.babycut.core.DefaultProjectContext;
 import io.onelioh.babycut.core.ProjectContext;
-import io.onelioh.babycut.infra.ffmpeg.FfprobeService;
-import io.onelioh.babycut.media.playback.JavaCvPlaybackCoordinator;
-import io.onelioh.babycut.media.playback.PlaybackCoordinator;
-import io.onelioh.babycut.media.playback.PreviewPlayer;
+import io.onelioh.babycut.engine.prober.MediaProber;
+import io.onelioh.babycut.engine.infra.javacv.JavaCvPlaybackCoordinator;
+import io.onelioh.babycut.engine.player.PlaybackCoordinator;
 import io.onelioh.babycut.model.media.AssetType;
 import io.onelioh.babycut.model.media.MediaAsset;
 import io.onelioh.babycut.model.media.MediaInfo;
@@ -40,6 +39,12 @@ public class AppController {
 
     private PlaybackCoordinator playbackCoordinator;
     private File lastDirectory = null;
+
+    private MediaProber fileProbe;
+
+    public AppController(MediaProber fileProbe) {
+        this.fileProbe = fileProbe;
+    }
 
 
 
@@ -154,7 +159,7 @@ public class AppController {
             Task<MediaInfo> ffprobeTask = new Task<>() {
                 @Override
                 protected MediaInfo call() throws Exception {
-                    return FfprobeService.analyze(file);
+                    return fileProbe.analyze(file);
                 }
             };
 
