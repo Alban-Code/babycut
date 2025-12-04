@@ -14,10 +14,10 @@ public class ClipItem extends TimelineItem {
     private double sourceIn;
 
 
-    public ClipItem(double startTime, double sourceIn, double duration, MediaAsset asset) {
+    public ClipItem(long startTime, double sourceIn, long durationMilliseonds, MediaAsset asset) {
         this.startTime = startTime;
         this.sourceIn = sourceIn;
-        this.duration = duration;
+        this.durationMilliseconds = durationMilliseonds;
         this.asset = asset;
     }
 

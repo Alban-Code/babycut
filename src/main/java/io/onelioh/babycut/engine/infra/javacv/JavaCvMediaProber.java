@@ -39,11 +39,11 @@ public class JavaCvMediaProber implements MediaProber {
                 String lang = getStreamMetadata(st, "language");
                 String title = getStreamMetadata(st, "title");
 
-                double durationStream = 0.0;
+                long durationStreamMilliseconds = 0L;
                 if (st.duration() != 0) {
-                    durationStream = st.duration() * av_q2d(st.time_base());
+                    durationStreamMilliseconds = Math.round(st.duration() * av_q2d(st.time_base()) * 1000);
                 } else {
-                    durationStream = grabber.getLengthInTime() / 1_000_000.0;
+                    durationStreamMilliseconds = Math.round(grabber.getLengthInTime() / 1_000.0);
                 }
 
                 if (codecType == AVMEDIA_TYPE_VIDEO) {
@@ -53,7 +53,7 @@ public class JavaCvMediaProber implements MediaProber {
                             1,
                             lang.isEmpty() ? "" : " [" + lang + "]",
                             title.isEmpty() ? "" : " - " + title,
-                            durationStream
+                            durationStreamMilliseconds
                     );
 
                     vids.add(videoStream);
@@ -64,13 +64,13 @@ public class JavaCvMediaProber implements MediaProber {
                             1,
                             lang.isEmpty() ? "" : " [" + lang + "]",
                             title.isEmpty() ? "" : " - " + title,
-                            durationStream
+                            durationStreamMilliseconds
                     );
 
                     auds.add(audioStream);
                 }
             }
-            double mainDuration = vids.isEmpty() ? 0.0 : vids.getFirst().getDuration();
+            long mainDuration = vids.isEmpty() ? 0L : vids.getFirst().getDurationMilliseconds();
             return new MediaInfo(vids, auds, mainDuration);
         } catch (Exception e) {
             e.printStackTrace();

@@ -10,5 +10,5 @@ public interface VideoDecoder {
 
     void close();
 
-    void seek(double seconds);
+    void seek(long milliseconds);
 }

@@ -8,7 +8,7 @@ import java.nio.ShortBuffer;
 
 public class AudioFrame implements MediaFrame {
 
-    private double timestampSeconds;
+    private long timestampMilliseconds;
     private Frame rawFrame;
     private int nbSamples;
     private int sampleRate;
@@ -16,12 +16,12 @@ public class AudioFrame implements MediaFrame {
 
     public AudioFrame() {}
 
-    public AudioFrame(double timestampSeconds) {
-        this.timestampSeconds = timestampSeconds;
+    public AudioFrame(long timestampMilliseconds) {
+        this.timestampMilliseconds = timestampMilliseconds;
     }
 
-    public AudioFrame(double timestampSeconds, Frame rawFrame, int sampleRate, int channels) {
-        this.timestampSeconds = timestampSeconds;
+    public AudioFrame(long timestampMilliseconds, Frame rawFrame, int sampleRate, int channels) {
+        this.timestampMilliseconds = timestampMilliseconds;
         this.rawFrame = rawFrame;
         this.nbSamples = rawFrame.samples != null ? rawFrame.samples[0].limit() : 0;
         this.sampleRate = sampleRate;
@@ -65,8 +65,8 @@ public class AudioFrame implements MediaFrame {
         return new byte[0];
     }
     @Override
-    public double getTimestampSeconds() {
-        return timestampSeconds;
+    public long getTimestampMilliseconds() {
+        return timestampMilliseconds;
     }
 
     @Override
@@ -80,10 +80,10 @@ public class AudioFrame implements MediaFrame {
     }
 
     public static AudioFrame endMarker() {
-        return new AudioFrame(Double.MAX_VALUE);
+        return new AudioFrame(Long.MAX_VALUE);
     }
 
-    public static AudioSeekMarker seekMarker(double seconds) {
+    public static AudioSeekMarker seekMarker(long seconds) {
         return new AudioSeekMarker(seconds);
     }
 

@@ -3,8 +3,10 @@ package io.onelioh.babycut;
 import io.onelioh.babycut.config.AppFactory;
 import io.onelioh.babycut.core.DefaultProjectContext;
 import io.onelioh.babycut.core.ProjectContext;
+import io.onelioh.babycut.service.AssetPlaybackCoordinator;
 import io.onelioh.babycut.engine.infra.javacv.JavaCvMediaProber;
 import io.onelioh.babycut.engine.prober.MediaProber;
+import io.onelioh.babycut.viewmodel.PlaybackViewModel;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -17,15 +19,9 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        ProjectContext projectContext = new DefaultProjectContext();
-
-        MediaProber mediaProber = new JavaCvMediaProber();
-
-        AppFactory factory = new AppFactory(projectContext, mediaProber);
-
+        AppFactory factory = new AppFactory();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/app.fxml"));
         loader.setControllerFactory(factory);
-
         Parent root = loader.load();
 
         Scene scene = new Scene(root, 1000, 600);

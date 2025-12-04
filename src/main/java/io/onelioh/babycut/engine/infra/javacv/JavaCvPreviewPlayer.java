@@ -4,7 +4,6 @@ import io.onelioh.babycut.engine.decoder.*;
 import io.onelioh.babycut.engine.infra.java.AudioPlayer;
 import io.onelioh.babycut.engine.player.PreviewPlayer;
 import io.onelioh.babycut.ui.utils.converter.VideoFrameToFxImageConverter;
-import javafx.application.Platform;
 import javafx.scene.image.Image;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -27,7 +26,7 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
     // --- États internes ---
     private volatile boolean isRunning = false; // Threads vivants
     private volatile boolean isPlaying = false; // Lecture en cours
-    private volatile Double seekRequest = null; // Demande de saut
+    private volatile Long seekRequest = null; // Demande de saut
     private volatile boolean isScrubbing = false; // Mode image par image
     private boolean endOfStream = false;
 
@@ -47,7 +46,7 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
     private final BlockingQueue<AudioFrame> audioQueue = new ArrayBlockingQueue<>(100);
 
     private Consumer<Image> onFrameReady;
-    private Consumer<Double> onTimeChanged;
+    private Consumer<Long> onTimeChanged;
     private Runnable onEndOfMedia;
 
     public JavaCvPreviewPlayer(VideoDecoder decoder, VideoFrameToFxImageConverter converter, AudioPlayer audioPlayer) {
@@ -94,21 +93,38 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
     }
 
     @Override
-    public void seek(double seconds) {
+    public void seek(long milliseconds) {
         if (!isRunning) startThreads();
 
         synchronized (statusLock) {
-            seekRequest = Math.max(0, seconds);
+            seekRequest = Math.max(0, milliseconds);
 
             videoQueue.clear();
             audioQueue.clear();
             audioPlayer.stop();
 
-            masterClockMicros = (long) (seconds * 1_000_000);
+            masterClockMicros = milliseconds * 1_000;
             lastSystemTimeNano = System.nanoTime();
 
             wakeUpThreads();
         }
+    }
+
+    // ============================= Setters ==============================
+
+    @Override
+    public void setOnFrameReady(Consumer<Image> cb) {
+        onFrameReady = cb;
+    }
+
+    @Override
+    public void setOnEndOfMedia(Runnable onEndOfMedia) {
+        this.onEndOfMedia = onEndOfMedia;
+    }
+
+    @Override
+    public void setOnTimeChanged(Consumer<Long> onTimeChanged) {
+        this.onTimeChanged = onTimeChanged;
     }
 
     // ============================= THREADS (Logique interne booléenne) =============================
@@ -175,10 +191,8 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
                 if (vFrame == null) continue;
 
                 // Fin de fichier
-                if (vFrame.getTimestampSeconds() == Double.MAX_VALUE) {
-                    if (onEndOfMedia != null) Platform.runLater(() -> {
-                        onEndOfMedia.run();
-                    });
+                if (vFrame.getTimestampMilliseconds() == Long.MAX_VALUE) {
+                    if (onEndOfMedia != null) onEndOfMedia.run();
                     continue;
                 }
 
@@ -191,7 +205,7 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
 
                 // Lecture normale
                 if (isPlaying) {
-                    long vidTime = (long) (vFrame.getTimestampSeconds() * 1_000_000);
+                    long vidTime = (long) (vFrame.getTimestampMilliseconds() * 1_000);
                     while (isPlaying && seekRequest == null) {
                         long now = System.nanoTime();
                         long deltaNano = now - lastSystemTimeNano;
@@ -235,7 +249,7 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
                 if (aFrame == null) continue;
 
                 // Fin de fichier
-                if (aFrame.getTimestampSeconds() == Double.MAX_VALUE) {
+                if (aFrame.getTimestampMilliseconds() == Long.MAX_VALUE) {
                     continue;
                 }
 
@@ -247,7 +261,7 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
                 if (isPlaying) {
                     audioPlayer.write(aFrame.getSampleRate(), aFrame.getChannels(), (java.nio.ShortBuffer) aFrame.getRawFrame().samples[0]);
 
-                    masterClockMicros = (long) (aFrame.getTimestampSeconds() * 1_000_000);
+                    masterClockMicros = (long) (aFrame.getTimestampMilliseconds() * 1_000);
                     lastSystemTimeNano = System.nanoTime();
                 }
                 aFrame.close();
@@ -261,7 +275,7 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
     // =============================== HELPERS ================================
 
     private void processSeek() {
-        double target = seekRequest;
+        long target = seekRequest;
         seekRequest = null;
         endOfStream = false;
 
@@ -276,7 +290,7 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
             frame = decoder.readNextFrame();
             if (frame == null) break;
 
-            if (frame.getTimestampSeconds() >= target - 0.1) {
+            if (frame.getTimestampMilliseconds() >= target - 0.1) {
                 break; // Trouvé !
             }
             frame.close();
@@ -328,29 +342,17 @@ public class JavaCvPreviewPlayer implements PreviewPlayer {
             frame.close();
             return;
         }
-        Platform.runLater(() -> {
-            try {
-                Image img = converter.toImage(frame);
-                onFrameReady.accept(img);
-                if (onTimeChanged != null) {
-                    onTimeChanged.accept(frame.getTimestampSeconds());
-                }
-            } catch (Exception ignored) {
-            } finally {
-                frame.close();
+        try {
+            Image img = converter.toImage(frame);
+            onFrameReady.accept(img);
+            if (onTimeChanged != null) {
+                onTimeChanged.accept(frame.getTimestampMilliseconds());
             }
-        });
+        } catch (Exception ignored) {
+        } finally {
+            frame.close();
+        }
     }
 
-    public void setOnFrameReady(Consumer<Image> cb) {
-        onFrameReady = cb;
-    }
 
-    public void setOnEndOfMedia(Runnable onEndOfMedia) {
-        this.onEndOfMedia = onEndOfMedia;
-    }
-
-    public void setOnTimeChanged(Consumer<Double> onTimeChanged) {
-        this.onTimeChanged = onTimeChanged;
-    }
 }

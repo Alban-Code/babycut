@@ -5,17 +5,17 @@ import org.bytedeco.javacv.Frame;
 public class VideoFrame implements MediaFrame {
     private int width;
     private int height;
-    private double timestampSeconds;
+    private long timestampMilliseconds;
     private Frame rawFrame;
 
-    public VideoFrame(double timestampSeconds) {
-        this.timestampSeconds = timestampSeconds;
+    public VideoFrame(long timestampMilliseconds) {
+        this.timestampMilliseconds = timestampMilliseconds;
     }
 
-    public VideoFrame(Frame frame, double timestampSeconds) {
+    public VideoFrame(Frame frame, long timestampMilliseconds) {
         width = frame.imageWidth;
         height = frame.imageHeight;
-        this.timestampSeconds = timestampSeconds;
+        this.timestampMilliseconds = timestampMilliseconds;
         rawFrame = frame;
     }
 
@@ -27,8 +27,8 @@ public class VideoFrame implements MediaFrame {
         return height;
     }
 
-    public double getTimestampSeconds() {
-        return timestampSeconds;
+    public long getTimestampMilliseconds() {
+        return timestampMilliseconds;
     }
 
     @Override
@@ -46,10 +46,10 @@ public class VideoFrame implements MediaFrame {
     }
 
     public static VideoFrame endMarker() {
-        return new VideoFrame(Double.MAX_VALUE);
+        return new VideoFrame(Long.MAX_VALUE);
     }
 
-    public static VideoSeekMarker seekMarker(double seconds) {
+    public static VideoSeekMarker seekMarker(long seconds) {
         return new VideoSeekMarker(seconds);
     }
 }

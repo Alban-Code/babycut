@@ -1,5 +1,7 @@
 package io.onelioh.babycut.model.media;
 
+import io.onelioh.babycut.engine.player.AssetPlayback;
+
 import java.nio.file.Path;
 
 /**
@@ -36,5 +38,4 @@ public class MediaAsset {
     public MediaInfo getMediaInfo() {
         return mediaInfo;
     }
-
 }

@@ -5,14 +5,14 @@ public class MediaData {
     private int height;
     private double fps;
     private int totalFrames;
-    private double duration;
+    private long durationMilliseconds;
 
-    public MediaData(double fps, int width, int height, int totalFrames, double duration) {
+    public MediaData(double fps, int width, int height, int totalFrames, long durationMilliseconds) {
         this.fps = fps;
         this.width = width;
         this.height = height;
         this.totalFrames = totalFrames;
-        this.duration = duration;
+        this.durationMilliseconds = durationMilliseconds;
     }
 
     public int getWidth() {
@@ -47,11 +47,11 @@ public class MediaData {
         this.totalFrames = totalFrames;
     }
 
-    public double getDuration() {
-        return duration;
+    public double getDurationMilliseconds() {
+        return durationMilliseconds;
     }
 
-    public void setDuration(double duration) {
-        this.duration = duration;
+    public void setDurationMilliseconds(long durationMilliseconds) {
+        this.durationMilliseconds = durationMilliseconds;
     }
 }

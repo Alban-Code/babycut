@@ -1,10 +1,9 @@
 package io.onelioh.babycut.ui.app;
 
-import io.onelioh.babycut.core.DefaultProjectContext;
 import io.onelioh.babycut.core.ProjectContext;
+import io.onelioh.babycut.engine.player.AssetPlayback;
+import io.onelioh.babycut.engine.player.TimelinePlayback;
 import io.onelioh.babycut.engine.prober.MediaProber;
-import io.onelioh.babycut.engine.infra.javacv.JavaCvPlaybackCoordinator;
-import io.onelioh.babycut.engine.player.PlaybackCoordinator;
 import io.onelioh.babycut.model.media.AssetType;
 import io.onelioh.babycut.model.media.MediaAsset;
 import io.onelioh.babycut.model.media.MediaInfo;
@@ -12,6 +11,7 @@ import io.onelioh.babycut.ui.assets.AssetBrowserController;
 import io.onelioh.babycut.ui.player.PlayerController;
 import io.onelioh.babycut.ui.timeline.TimelineController;
 import io.onelioh.babycut.ui.toolbar.ToolbarController;
+import io.onelioh.babycut.viewmodel.PlaybackViewModel;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.layout.BorderPane;
@@ -21,6 +21,7 @@ import javafx.stage.FileChooser;
 import java.io.File;
 
 public class AppController {
+
 
     @FXML
     private BorderPane root;
@@ -36,14 +37,22 @@ public class AppController {
 
     private ProjectContext projectContext;
     private AppProjectContextListener appListener;
+    private final AssetPlayback assetPlaybackCoordinator;
+    private final PlaybackViewModel assetVM;
+    private final TimelinePlayback timelinePlaybackCoordinator;
+    private final PlaybackViewModel timelineVM;
 
-    private PlaybackCoordinator playbackCoordinator;
     private File lastDirectory = null;
 
     private MediaProber fileProbe;
 
-    public AppController(MediaProber fileProbe) {
+    public AppController(ProjectContext projectContext, MediaProber fileProbe, AssetPlayback assetPlaybackCoordinator, PlaybackViewModel assetVM, TimelinePlayback timelinePlaybackCoordinator, PlaybackViewModel timelineVM) {
+        this.projectContext = projectContext;
         this.fileProbe = fileProbe;
+        this.assetPlaybackCoordinator = assetPlaybackCoordinator;
+        this.assetVM = assetVM;
+        this.timelinePlaybackCoordinator = timelinePlaybackCoordinator;
+        this.timelineVM = timelineVM;
     }
 
 
@@ -51,12 +60,9 @@ public class AppController {
     @FXML
     private void initialize() {
 
-        projectContext = new DefaultProjectContext();
         projectContext.createProject();
         appListener = new AppProjectContextListener(assetsViewController, timelineViewController, playerViewController);
         projectContext.addListener(appListener);
-
-        playbackCoordinator = new JavaCvPlaybackCoordinator();
 
         toolbarViewController.setAppController(this);
 
@@ -69,35 +75,11 @@ public class AppController {
 //            seekTimeline(seconds);
 //        });
 
-        playerViewController.setOnPlayRequested(() -> {
-            playbackCoordinator.play();
-        });
+        assetsViewController.setOnSimpleClicked(assetPlaybackCoordinator::load);
 
-        playerViewController.setOnPauseRequested(() -> {
-            playbackCoordinator.pause();
-        });
-
-        playerViewController.setOnStopRequested(() -> {
-            playbackCoordinator.stop();
-        });
-
-        playerViewController.setOnSeekRequested((Double seconds) -> {
-            playbackCoordinator.seek(seconds);
-        });
-
-        assetsViewController.setOnSimpleClicked(asset -> {
-            playbackCoordinator.load(asset);
-        });
-
-        playbackCoordinator.setOnTimeChanged(currentSec -> {
-            playerViewController.updateTime(currentSec, playbackCoordinator.getDurationSeconds());
-        });
-
-        playbackCoordinator.setOnEndOfMedia(() -> {
-            playerViewController.updateTime(0.0, playbackCoordinator.getDurationSeconds());
-        });
-
-        playbackCoordinator.setOnReady(image -> playerViewController.setImage(image));
+//        playbackCoordinator.setOnEndOfMedia(() -> {
+//            playerViewController.updateTime(0.0, playbackCoordinator.getDurationMilliseconds());
+//        });
 
     }
 
@@ -151,9 +133,6 @@ public class AppController {
     }
 
     private void loadMedia(File file) {
-
-        playbackCoordinator.stop();
-
         try {
 
             Task<MediaInfo> ffprobeTask = new Task<>() {
@@ -168,7 +147,6 @@ public class AppController {
                 MediaInfo info = ffprobeTask.getValue();
 
                 onMediaAnalyzed(file, info);
-
             });
 
             ffprobeTask.setOnFailed(e -> {
@@ -189,7 +167,7 @@ public class AppController {
         AssetType type = mediaInfo.getAudioStreams().isEmpty() ? AssetType.AUDIO : AssetType.VIDEO;
         MediaAsset asset = new MediaAsset(file.toPath(), type, mediaInfo);
 
-        playbackCoordinator.load(asset);
+        assetPlaybackCoordinator.load(asset);
 
         projectContext.addMediaAsset(asset);
     }

@@ -1,5 +1,7 @@
 package io.onelioh.babycut.ui.player;
 
+import io.onelioh.babycut.engine.player.AssetPlayback;
+import io.onelioh.babycut.viewmodel.PlaybackViewModel;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -24,15 +26,26 @@ public class PlayerController {
     @FXML
     private StackPane centerPane;
 
-    private Runnable onPlayRequested;
-    private Runnable onPauseRequested;
-    private Runnable onStopRequested;
-    private Consumer<Double> onSeekRequested;
+    private final AssetPlayback assetPlaybackCoordinator;
+    private final PlaybackViewModel playbackVM;
+
+    // Pour gérer le drag du slider sans conflit avec le binding
+    private boolean isUserDragging = false;
+
+    public PlayerController(AssetPlayback assetPlaybackCoordinator, PlaybackViewModel assetVM) {
+        this.assetPlaybackCoordinator = assetPlaybackCoordinator;
+        this.playbackVM = assetVM;
+    }
 
     @FXML
     private void initialize() {
-        setControlsEnabled(false);
+        setupVideoView();
+        setupBindings();
+        setupControls();
+        setupFrameListeners();
+    }
 
+    private void setupVideoView() {
         videoImageView.setPreserveRatio(true);
         videoImageView.setSmooth(true);
 
@@ -40,89 +53,63 @@ public class PlayerController {
         videoImageView.fitHeightProperty().bind(centerPane.heightProperty());
 
         StackPane.setAlignment(videoImageView, Pos.CENTER);
+    }
 
-        playBtn.setOnAction(e -> {
-            if (onPlayRequested != null) onPlayRequested.run();
-        });
-        pauseBtn.setOnAction(e -> {
-            if (onPauseRequested != null) onPauseRequested.run();
-        });
-        stopBtn.setOnAction(e -> {
-            if (onStopRequested != null) onStopRequested.run();
+    private void setupBindings() {
+        // ===================== TIME LABEL =====================
+        timeLabel.textProperty().bind(playbackVM.formattedTimeProperty());
+
+        // ===================== TIME SLIDER =====================
+        timeSlider.maxProperty().bind(playbackVM.durationProperty());
+
+        playbackVM.currentTimeProperty().addListener((obs, oldVal, newVal) -> {
+            if (!isUserDragging) {
+                timeSlider.setValue(newVal.longValue());
+            }
         });
 
-
-        // handlers slider
+        // Détecter le début/fin du drag
         timeSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
-            if (onSeekRequested != null && !isChanging) {
-                onSeekRequested.accept(timeSlider.getValue());
+            if (isChanging) {
+                isUserDragging = true;
+            } else {
+                isUserDragging = false;
+                assetPlaybackCoordinator.seek(Math.round(Math.round(timeSlider.getValue())));
             }
         });
-        // Seek si clic direct sur la barre (drag terminé)
+
+        // Seek sur simple clique
         timeSlider.setOnMouseReleased(e -> {
-            if (onSeekRequested != null) {
-                onSeekRequested.accept(timeSlider.getValue());
+            if (!isUserDragging) {
+                assetPlaybackCoordinator.seek(Math.round(timeSlider.getValue()));
             }
-
         });
 
+         // ===================== BOUTONS ACTIVES/DESACTIVES =====================
+         playBtn.disableProperty().bind(playbackVM.readyProperty().not());
+         pauseBtn.disableProperty().bind(playbackVM.readyProperty().not());
+         stopBtn.disableProperty().bind(playbackVM.readyProperty().not());
+         timeSlider.disableProperty().bind(playbackVM.readyProperty().not());
+
+          // ===================== VISIBILITE PLAY/PAUSE =====================
+          playBtn.visibleProperty().bind(playbackVM.playingProperty().not());
+          pauseBtn.visibleProperty().bind(playbackVM.playingProperty());
+
+          playBtn.managedProperty().bind(playBtn.visibleProperty());
+          pauseBtn.managedProperty().bind(pauseBtn.visibleProperty());
     }
 
-    public void setDuration(double totalSec) {
-        timeSlider.setDisable(false);
-        timeSlider.setMin(0);
-        timeSlider.setMax(totalSec);
-        timeSlider.setValue(0);
-        timeLabel.setText("00:00 / " + formatTime(totalSec));
+    private void setupControls() {
+        playBtn.setOnAction(e -> assetPlaybackCoordinator.play());
+        pauseBtn.setOnAction(e -> assetPlaybackCoordinator.pause());
+        stopBtn.setOnAction(e -> assetPlaybackCoordinator.stop());
     }
 
-
-    public void updateTime(double currentSec, double totalSec) {
-        if (!timeSlider.isValueChanging()) {
-            timeSlider.setValue(currentSec);
-        }
-        timeLabel.setText(formatTime(currentSec) + " / " + formatTime(totalSec));
+    private void setupFrameListeners() {
+        assetPlaybackCoordinator.addFrameListener(this::setImage);
     }
 
-    private String formatTime(double sec) {
-        if (Double.isNaN(sec) || sec < 0) sec = 0;
-        int s = (int) Math.floor(sec);
-        int h = s / 3600;
-        int m = (s % 3600) / 60;
-        int ss = s % 60;
-        if (h > 0) return String.format("%d:%02d:%02d", h, m, ss);
-        return String.format("%02d:%02d", m, ss);
-    }
-
-    private void setControlsEnabled(boolean enabled) {
-        playBtn.setDisable(!enabled);
-        pauseBtn.setDisable(!enabled);
-        stopBtn.setDisable(!enabled);
-        timeSlider.setDisable(!enabled);
-    }
-
-    public void setImage(Image image) {
+    private void setImage(Image image) {
         videoImageView.setImage(image);
     }
-
-    public void setOnPlayRequested(Runnable onPlayRequested) {
-        this.onPlayRequested = onPlayRequested;
-    }
-
-    public void setOnPauseRequested(Runnable onPauseRequested) {
-        this.onPauseRequested = onPauseRequested;
-    }
-
-    public void setOnStopRequested(Runnable onStopRequested) {
-        this.onStopRequested = onStopRequested;
-    }
-
-    public void setOnSeekRequested(Consumer<Double> onSeekRequested) {
-        this.onSeekRequested = onSeekRequested;
-    }
-
-    public void enableControls() {
-        setControlsEnabled(true);
-    }
-
 }

@@ -8,19 +8,19 @@ package io.onelioh.babycut.model.timeline;
  * représentent par exemple des clips ou des transitions.
  */
 public abstract class TimelineItem {
-    protected double startTime;
-    protected double duration;
+    protected long startTime;
+    protected long durationMilliseconds;
 
-    public double getStartTime() {
+    public long getStartTime() {
         return startTime;
     }
 
-    public double getDuration() {
-        return duration;
+    public long getDurationMilliseconds() {
+        return durationMilliseconds;
     }
 
-    public double getEndTime() {
-        return duration + startTime;
+    public long getEndTime() {
+        return durationMilliseconds + startTime;
     }
 
     public abstract TimelineItemType getItemType();

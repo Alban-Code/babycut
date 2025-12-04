@@ -17,18 +17,18 @@ import java.util.List;
 public class MediaInfo {
     private List<MediaStream> videoStreams;
     private List<MediaStream> audioStreams;
-    private double durationSeconds;
+    private long durationMilliseconds;
 
     public MediaInfo() {
         this.videoStreams = List.of();
         this.audioStreams = List.of();
-        this.durationSeconds = 0;
+        this.durationMilliseconds = 0;
     }
 
-    public MediaInfo(List<MediaStream> videoStreams, List<MediaStream> audioStreams, double durationSeconds) {
+    public MediaInfo(List<MediaStream> videoStreams, List<MediaStream> audioStreams, long durationMilliseconds) {
         this.videoStreams = videoStreams;
         this.audioStreams = audioStreams;
-        this.durationSeconds = durationSeconds;
+        this.durationMilliseconds = durationMilliseconds;
     }
 
     public List<MediaStream> getVideoStreams() {
@@ -39,8 +39,8 @@ public class MediaInfo {
         return Collections.unmodifiableList(audioStreams);
     }
 
-    public double getDurationSeconds() {
-        return this.durationSeconds;
+    public long getDurationMilliseconds() {
+        return this.durationMilliseconds;
     }
 
 

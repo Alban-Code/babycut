@@ -12,11 +12,11 @@ public interface PreviewPlayer {
 
     void stop();
 
-    void seek(double seconds);
+    void seek(long milliseconds);
 
     void setOnFrameReady(Consumer<Image> cb);
 
     void setOnEndOfMedia(Runnable onEndOfMedia);
 
-    void setOnTimeChanged(Consumer<Double> onTimeChanged);
+    void setOnTimeChanged(Consumer<Long> onTimeChanged);
 }

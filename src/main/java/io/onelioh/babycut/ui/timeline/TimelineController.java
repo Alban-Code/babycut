@@ -123,7 +123,7 @@ public class TimelineController {
 
     private StackPane buildClipNode(TimelineTrack track, ClipItem clip) {
         double x = clip.getStartTime() * PIXELS_PER_SECOND;
-        double w = clip.getDuration() * PIXELS_PER_SECOND;
+        double w = clip.getDurationMilliseconds() * PIXELS_PER_SECOND;
 
         StackPane node = new StackPane();
         node.setLayoutX(x);

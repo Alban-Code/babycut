@@ -4,6 +4,7 @@ import io.onelioh.babycut.engine.player.PreviewPlayer;
 import io.onelioh.babycut.engine.player.PreviewPlayerFactory;
 import io.onelioh.babycut.engine.infra.java.AudioPlayer;
 import io.onelioh.babycut.model.media.MediaAsset;
+import io.onelioh.babycut.model.timeline.Timeline;
 import io.onelioh.babycut.ui.utils.converter.VideoFrameToFxImageConverter;
 
 public class JavaCvPreviewPlayerFactory implements PreviewPlayerFactory {
@@ -15,6 +16,12 @@ public class JavaCvPreviewPlayerFactory implements PreviewPlayerFactory {
         AudioPlayer audioPlayer = new AudioPlayer();
 
         return new JavaCvPreviewPlayer(decoder, converter, audioPlayer);
+    }
+
+    @Override
+    public PreviewPlayer createForTimeline(Timeline timeline) {
+        // TODO
+        return null;
     }
 
     @Override

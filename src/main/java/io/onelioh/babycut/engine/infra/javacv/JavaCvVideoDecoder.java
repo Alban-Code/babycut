@@ -60,14 +60,14 @@ public class JavaCvVideoDecoder implements VideoDecoder {
             // Cela alloue une nouvelle zone mémoire native indépendante
             Frame clonedFrame = frame.clone();
 
-            double timestampSeconds = frameGrabber.getTimestamp() / 1_000_000.0;
+            long timestampMilliseconds = Math.round(frameGrabber.getTimestamp() / 1_000.0);
 
             if (clonedFrame.image != null) {
                 System.out.println("Image");
-                return new VideoFrame(clonedFrame, timestampSeconds);
+                return new VideoFrame(clonedFrame, timestampMilliseconds);
             } else if (clonedFrame.samples != null) {
                 System.out.println("Audio");
-                return new AudioFrame(timestampSeconds, clonedFrame, frameGrabber.getSampleRate(), frameGrabber.getAudioChannels());
+                return new AudioFrame(timestampMilliseconds, clonedFrame, frameGrabber.getSampleRate(), frameGrabber.getAudioChannels());
             }
 
             // Si la frame n'est ni audio ni vidéo (ex: metadata), on doit la fermer pour éviter la fuite
@@ -98,18 +98,18 @@ public class JavaCvVideoDecoder implements VideoDecoder {
     }
 
     @Override
-    public void seek(double seconds) {
+    public void seek(long milliseconds) {
         // Decoder initialisé ou starté.
         if (state != VideoReaderState.STARTED && state != VideoReaderState.INITIALIZED) {
             return;
         }
 
         // on évite les valeurs débiles
-        if (seconds < 0) {
-            seconds = 0;
+        if (milliseconds < 0) {
+            milliseconds = 0;
         }
 
-        long targetMicros = (long) (seconds * 1_000_000L);
+        long targetMicros = milliseconds * 1_000L;
 
         try {
             // FFmpegFrameGrabber : temps en microsecondes

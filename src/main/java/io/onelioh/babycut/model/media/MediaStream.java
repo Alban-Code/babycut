@@ -13,15 +13,15 @@ public class MediaStream {
     private int index;
     private String lang;
     private String description;
-    private double duration;
+    private long durationMilliseconds;
 
-    public MediaStream(MediaType type, String codec, int index, String lang, String description, double duration) {
+    public MediaStream(MediaType type, String codec, int index, String lang, String description, long durationMilliseconds) {
         this.type = type;
         this.codec = codec;
         this.index = index;
         this.lang = lang;
         this.description = description;
-        this.duration = duration;
+        this.durationMilliseconds = durationMilliseconds;
     }
 
     public MediaType getType() { return type; }
@@ -29,7 +29,7 @@ public class MediaStream {
     public int getIndex() { return index; }
     public String getLang() { return lang; }
     public String getDescription() { return description; }
-    public double getDuration() { return this.duration; }
+    public long getDurationMilliseconds() { return this.durationMilliseconds; }
 
     public String label() {
         return "%s #%d (%s)".formatted(type, index, codec);

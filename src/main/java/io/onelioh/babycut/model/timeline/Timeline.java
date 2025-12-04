@@ -17,10 +17,8 @@ public class Timeline {
     private List<TimelineTrack> tracks = new ArrayList<>();
 
     public Timeline(String name) {
-
         this.name = name;
     }
-
 
     public String getName() {
         return name;
@@ -34,14 +32,13 @@ public class Timeline {
         tracks.add(newTrack);
     }
 
-    public double getTimelineEnd() {
-        double endTime = 0.0;
+    public long getTimelineEnd() {
+        long endTime = 0L;
         for (TimelineTrack track : getTracks()) {
             for (TimelineItem item : track.getItems()) {
                 endTime = Math.max(item.getEndTime(), endTime);
             }
         }
-
         return endTime;
     }
 }

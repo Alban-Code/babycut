@@ -5,12 +5,12 @@ public class AudioSeekMarker extends AudioFrame {
         super();
     }
 
-    public AudioSeekMarker(double timestamps) {
+    public AudioSeekMarker(long timestamps) {
         super(timestamps);
     }
 
     @Override
-    public double getTimestampSeconds() {
+    public long getTimestampMilliseconds() {
         return 0;
     }
 

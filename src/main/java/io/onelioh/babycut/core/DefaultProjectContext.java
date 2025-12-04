@@ -49,9 +49,9 @@ public class DefaultProjectContext implements ProjectContext{
     @Override
     public void addTimelineItem(MediaAsset asset) {
         MediaInfo info = asset.getMediaInfo();
-        double duration = info.getDurationSeconds();
+        long duration = info.getDurationMilliseconds();
 
-        double insertionTime = activeTimeline.getTimelineEnd();
+        long insertionTime = activeTimeline.getTimelineEnd();
 
         TimelineTrack videoTrack = activeTimeline.getTracks().getFirst();
         TimelineTrack audioTrack = activeTimeline.getTracks().get(1);

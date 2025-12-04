@@ -32,10 +32,8 @@ public class AppProjectContextListener implements ProjectContextListener {
 
     @Override
     public void onMediaAssetAdded(MediaAsset asset) {
-        double totalSec = asset.getMediaInfo().getDurationSeconds();
+        long totalSec = asset.getMediaInfo().getDurationMilliseconds();
         assetBrowserController.addAsset(asset);
-        playerController.setDuration(totalSec);
-        playerController.enableControls();
     }
 
     @Override
