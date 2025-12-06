@@ -1,6 +1,8 @@
 package io.onelioh.babycut.ui.timeline;
 
 import io.onelioh.babycut.model.timeline.*;
+import io.onelioh.babycut.viewmodel.TimelineViewModel;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -16,7 +18,8 @@ import java.util.function.Consumer;
 
 public class TimelineController {
 
-    private static final double PIXELS_PER_SECOND = 80.0;
+    private final TimelineViewModel timelineVM;
+
     private static final double TRACK_HEIGHT = 40.0;
     private static final double CLIP_HEIGHT = 30.0;
 
@@ -25,22 +28,27 @@ public class TimelineController {
     @FXML
     private ScrollPane timelineScroll;
 
-    private Timeline timeline;
-    private double totalDuration = 0.0;
-    private Consumer<Double> onSeekRequested;
+    private Consumer<Long> onSeekRequested;
 
     private Line playhead;
 
-    @FXML
-    private void initialize() {}
-
-    public void setTimeline(Timeline timeline) {
-        this.timeline = timeline;
-        rebuildFromModel();
+    public TimelineController(TimelineViewModel timelineVM) {
+        this.timelineVM = timelineVM;
     }
 
-    public void updatePlayhead(double currentSec) {
-        double x = currentSec * PIXELS_PER_SECOND;
+    @FXML
+    private void initialize() {
+        this.timelineVM.timelineProperty().addListener((obs, oldTimeline, newTimeline) -> {
+            rebuildUI();
+        });
+
+        this.timelineVM.pixelsPerSecondProperty().addListener((obs, oldVal, newVal) -> {
+            rebuildUI();
+        });
+    }
+
+    public void updatePlayheadUi(long currentSec) {
+        double x = (currentSec / 1000.0) * this.timelineVM.getPixelsPerSecond();
 
         if (playhead != null) {
             // La ligne reste verticale de x à x, on la décale juste
@@ -50,26 +58,24 @@ public class TimelineController {
         }
     }
 
-    public void setOnSeekRequested(Consumer<Double> handler) {
+    public void setOnSeekRequested(Consumer<Long> handler) {
         this.onSeekRequested = handler;
     }
 
-    private void rebuildFromModel() {
+    private void rebuildUI() {
         timelineRoot.getChildren().clear();
 
-        if (timeline == null || timeline.getTracks().isEmpty()) {
-            totalDuration = 0.0;
+        if (this.timelineVM.getTimeline() == null || this.timelineVM.getTracks().isEmpty()) {
             return;
         }
 
-        totalDuration = timeline.getTimelineEnd();
-        double width = Math.max(totalDuration * PIXELS_PER_SECOND, 400);
+        double width = Math.max(this.timelineVM.getTimelineEnd() * this.timelineVM.getPixelsPerSecond(), 400);
 
         VBox tracksBox = new VBox(2);
         tracksBox.setFillWidth(true);
         tracksBox.setPrefWidth(width);
 
-        for (TimelineTrack track : timeline.getTracks()) {
+        for (var track : this.timelineVM.getTracks()) {
             Pane trackPane = buildTrackPane(track, width);
             tracksBox.getChildren().add(trackPane);
 
@@ -92,15 +98,19 @@ public class TimelineController {
         playhead.endYProperty().bind(tracksBox.heightProperty());
         playhead.setManaged(false);
 
+        playhead.layoutXProperty().bind(
+                Bindings.createDoubleBinding(
+                        () -> this.timelineVM.getPlayheadPosition() / 1000.0 * this.timelineVM.getPixelsPerSecond(),
+                        this.timelineVM.playheadPositionProperty(),
+                        this.timelineVM.pixelsPerSecondProperty()
+                )
+        );
+
         StackPane.setAlignment(playhead, Pos.TOP_LEFT);
         timelineRoot.getChildren().add(playhead);
-
-
-        // position initiale
-        updatePlayhead(0.0);
     }
 
-    private Pane buildTrackPane(TimelineTrack track, double width) {
+    private Pane buildTrackPane(TimelineViewModel.TrackViewModel track, double width) {
         Pane trackPane = new Pane();
         trackPane.setPrefHeight(TRACK_HEIGHT);
         trackPane.setMinHeight(TRACK_HEIGHT);
@@ -121,9 +131,9 @@ public class TimelineController {
         return trackPane;
     }
 
-    private StackPane buildClipNode(TimelineTrack track, ClipItem clip) {
-        double x = clip.getStartTime() * PIXELS_PER_SECOND;
-        double w = clip.getDurationMilliseconds() * PIXELS_PER_SECOND;
+    private StackPane buildClipNode(TimelineViewModel.TrackViewModel track, ClipItem clip) {
+        double x = clip.getStartTime() * this.timelineVM.getPixelsPerSecond();
+        double w = clip.getDurationMilliseconds() * this.timelineVM.getPixelsPerSecond();
 
         StackPane node = new StackPane();
         node.setLayoutX(x);
@@ -145,22 +155,25 @@ public class TimelineController {
         // clic sur le clip → seek au début du clip
         node.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             e.consume();
-            double seconds = clip.getStartTime();
+
+            this.timelineVM.selectClip(clip);
+            long seconds = clip.getStartTime();
             if (onSeekRequested != null) {
                 onSeekRequested.accept(seconds);
             }
-            updatePlayhead(seconds);
+            updatePlayheadUi(seconds);
         });
 
         return node;
     }
 
     private void handleClick(double x) {
-        double sec = x / PIXELS_PER_SECOND;
+        // Convertir en millisecondes
+        long sec = Math.round(x / this.timelineVM.getPixelsPerSecond()) * 1000L;
         if (sec < 0) sec = 0;
-        if (sec > totalDuration) sec = totalDuration;
+        if (sec > this.timelineVM.getTimelineEnd()) sec = this.timelineVM.getTimelineEnd();
         if (onSeekRequested != null) onSeekRequested.accept(sec);
-        updatePlayhead(sec);
+        updatePlayheadUi(sec);
     }
 
 

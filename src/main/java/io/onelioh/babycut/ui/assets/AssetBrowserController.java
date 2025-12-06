@@ -1,6 +1,7 @@
 package io.onelioh.babycut.ui.assets;
 
 import io.onelioh.babycut.model.media.MediaAsset;
+import io.onelioh.babycut.viewmodel.ProjectViewModel;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class AssetBrowserController {
+
+    private final ProjectViewModel projectVM;
 
     @FXML
     private ListView<MediaAsset> assetsListView;
@@ -19,6 +22,10 @@ public class AssetBrowserController {
     // Callback définie dans l'orchestrateur (AppController)
     private Consumer<MediaAsset> onAddToTimelineRequested;
     private Consumer<MediaAsset> onSimpleClicked;
+
+    public AssetBrowserController(ProjectViewModel projectVM) {
+        this.projectVM = projectVM;
+    }
 
     @FXML
     private void initialize() {

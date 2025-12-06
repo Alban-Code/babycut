@@ -15,8 +15,27 @@ import java.util.List;
  * Il sert de structure principale pour sauvegarder et charger les projets.
  */
 public class Project {
+    private String name;
+    private String path;
+
     private List<MediaAsset> mediaAssets = new ArrayList<>();
     private List<Timeline> timelines = new ArrayList<>();
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 
     public List<MediaAsset> getMediaAssets() {
         return Collections.unmodifiableList(mediaAssets);

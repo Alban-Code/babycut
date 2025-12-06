@@ -11,8 +11,12 @@ import io.onelioh.babycut.engine.prober.MediaProber;
 import io.onelioh.babycut.service.AssetPlaybackCoordinator;
 import io.onelioh.babycut.service.TimelinePlaybackCoordinator;
 import io.onelioh.babycut.ui.app.AppController;
+import io.onelioh.babycut.ui.assets.AssetBrowserController;
 import io.onelioh.babycut.ui.player.PlayerController;
+import io.onelioh.babycut.ui.timeline.TimelineController;
 import io.onelioh.babycut.viewmodel.PlaybackViewModel;
+import io.onelioh.babycut.viewmodel.ProjectViewModel;
+import io.onelioh.babycut.viewmodel.TimelineViewModel;
 import javafx.util.Callback;
 
 public class AppFactory implements Callback<Class<?>, Object> {
@@ -20,8 +24,10 @@ public class AppFactory implements Callback<Class<?>, Object> {
     private final ProjectContext projectContext = new DefaultProjectContext();
     private final MediaProber mediaProber = new JavaCvMediaProber();
 
+    private final ProjectViewModel projectVM = new ProjectViewModel();
+    private final TimelineViewModel timelineVM = new TimelineViewModel();
     private final PlaybackViewModel assetVM = new PlaybackViewModel();
-    private final PlaybackViewModel timelineVM = new PlaybackViewModel();
+    private final PlaybackViewModel timelinePlaybackVM = new PlaybackViewModel();
 
     private final PreviewPlayerFactory playerFactory = new JavaCvPreviewPlayerFactory();
 
@@ -30,7 +36,7 @@ public class AppFactory implements Callback<Class<?>, Object> {
 
     private TimelinePlayback getTimelineCoordinator() {
         if (timelineCoordinator == null) {
-            timelineCoordinator = new TimelinePlaybackCoordinator(timelineVM, playerFactory, null);
+            timelineCoordinator = new TimelinePlaybackCoordinator(timelinePlaybackVM, playerFactory, null);
             wireExclusivity();
         }
         return timelineCoordinator;
@@ -59,6 +65,14 @@ public class AppFactory implements Callback<Class<?>, Object> {
 
         if (param == PlayerController.class) {
             return new PlayerController(getAssetCoordinator(), this.assetVM);
+        }
+
+        if (param == AssetBrowserController.class) {
+            return new AssetBrowserController(this.projectVM);
+        }
+
+        if (param == TimelineController.class) {
+            return new TimelineController(this.timelineVM);
         }
 
         try {

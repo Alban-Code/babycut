@@ -40,7 +40,7 @@ public class AppController {
     private final AssetPlayback assetPlaybackCoordinator;
     private final PlaybackViewModel assetVM;
     private final TimelinePlayback timelinePlaybackCoordinator;
-    private final PlaybackViewModel timelineVM;
+    private final PlaybackViewModel timelinePlaybackVM;
 
     private File lastDirectory = null;
 
@@ -52,7 +52,7 @@ public class AppController {
         this.assetPlaybackCoordinator = assetPlaybackCoordinator;
         this.assetVM = assetVM;
         this.timelinePlaybackCoordinator = timelinePlaybackCoordinator;
-        this.timelineVM = timelineVM;
+        this.timelinePlaybackVM = timelineVM;
     }
 
 
