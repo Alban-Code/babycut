@@ -33,12 +33,4 @@ public interface ProjectContext {
     TimelineTrack getAudioTrack();
 
     boolean ensureActiveTimelineExists();
-
-
-    // notifications
-    void addListener(ProjectContextListener listener);
-
-    void removeListener(ProjectContextListener listener);
-
-
 }

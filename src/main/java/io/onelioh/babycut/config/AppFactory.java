@@ -21,7 +21,6 @@ import javafx.util.Callback;
 
 public class AppFactory implements Callback<Class<?>, Object> {
 
-    private final ProjectContext projectContext = new DefaultProjectContext();
     private final MediaProber mediaProber = new JavaCvMediaProber();
 
     private final ProjectViewModel projectVM = new ProjectViewModel();
@@ -29,6 +28,7 @@ public class AppFactory implements Callback<Class<?>, Object> {
     private final PlaybackViewModel assetVM = new PlaybackViewModel();
     private final PlaybackViewModel timelinePlaybackVM = new PlaybackViewModel();
 
+    private final ProjectContext projectContext = new DefaultProjectContext(projectVM, timelineVM);
     private final PreviewPlayerFactory playerFactory = new JavaCvPreviewPlayerFactory();
 
     private AssetPlayback assetCoordinator;
@@ -60,7 +60,7 @@ public class AppFactory implements Callback<Class<?>, Object> {
     @Override
     public Object call(Class<?> param) {
         if (param == AppController.class) {
-            return new AppController(this.projectContext, this.mediaProber, getAssetCoordinator(), assetVM, getTimelineCoordinator(), timelineVM);
+            return new AppController(this.projectContext, this.mediaProber, getAssetCoordinator(), assetVM, getTimelineCoordinator(), timelinePlaybackVM);
         }
 
         if (param == PlayerController.class) {
@@ -68,7 +68,7 @@ public class AppFactory implements Callback<Class<?>, Object> {
         }
 
         if (param == AssetBrowserController.class) {
-            return new AssetBrowserController(this.projectVM);
+            return new AssetBrowserController(this.projectVM, this.projectContext);
         }
 
         if (param == TimelineController.class) {

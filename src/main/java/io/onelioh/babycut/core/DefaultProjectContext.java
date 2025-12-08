@@ -4,23 +4,33 @@ import io.onelioh.babycut.model.media.MediaAsset;
 import io.onelioh.babycut.model.media.MediaInfo;
 import io.onelioh.babycut.model.media.MediaStream;
 import io.onelioh.babycut.model.project.Project;
-import io.onelioh.babycut.model.timeline.*;
+import io.onelioh.babycut.model.timeline.ClipItem;
+import io.onelioh.babycut.model.timeline.Timeline;
+import io.onelioh.babycut.model.timeline.TimelineTrack;
+import io.onelioh.babycut.model.timeline.TrackType;
+import io.onelioh.babycut.viewmodel.ProjectViewModel;
+import io.onelioh.babycut.viewmodel.TimelineViewModel;
 
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-public class DefaultProjectContext implements ProjectContext{
+public class DefaultProjectContext implements ProjectContext {
 
     private Project currentProject;
-    private Timeline activeTimeline;
-    private List<ProjectContextListener> listeners = new CopyOnWriteArrayList<>();
+    private final ProjectViewModel projectViewModel;
+    private final TimelineViewModel timelineViewModel;
+
+    public DefaultProjectContext(ProjectViewModel projectVM, TimelineViewModel timelineVM) {
+        this.projectViewModel = projectVM;
+        this.timelineViewModel = timelineVM;
+    }
 
 
     @Override
     public Project createProject() {
         currentProject = new Project();
-
-        activeTimeline = new Timeline("default");
+        currentProject.setName("Default Project");
+        currentProject.setPath("path à définir");
+        Timeline activeTimeline = new Timeline("default");
 
         TimelineTrack videoTrack = new TimelineTrack(TrackType.VIDEO);
         TimelineTrack audioTrack = new TimelineTrack(TrackType.AUDIO);
@@ -28,29 +38,37 @@ public class DefaultProjectContext implements ProjectContext{
         activeTimeline.addTrack(videoTrack);
         activeTimeline.addTrack(audioTrack);
 
-        notifyProjectChanged(currentProject);
-        notifyActiveTimelineAdded(activeTimeline);
+        currentProject.addTimeline(activeTimeline);
+        currentProject.setActiveTimeline(activeTimeline);
+
+        this.projectViewModel.setProject(currentProject);
+        this.timelineViewModel.setTimeline(activeTimeline);
+
         return currentProject;
     }
 
     @Override
     public void addMediaAsset(MediaAsset newAsset) {
         currentProject.addMediaAsset(newAsset);
-        notifyMediaAssetAdded(newAsset);
+        this.projectViewModel.getAssets().add(newAsset);
     }
 
     @Override
     public void addTimeline(Timeline newTimeline) {
         currentProject.addTimeline(newTimeline);
-        activeTimeline = newTimeline;
-        notifyActiveTimelineAdded(newTimeline);
+
+        projectViewModel.getTimelines().add(newTimeline);
+        projectViewModel.setActiveTimeline(newTimeline);
+        timelineViewModel.setTimeline(newTimeline);
     }
 
     @Override
     public void addTimelineItem(MediaAsset asset) {
+        Timeline activeTimeline = currentProject.getActiveTimeline();
+        if (activeTimeline == null) return;
+
         MediaInfo info = asset.getMediaInfo();
         long duration = info.getDurationMilliseconds();
-
         long insertionTime = activeTimeline.getTimelineEnd();
 
         TimelineTrack videoTrack = activeTimeline.getTracks().getFirst();
@@ -67,7 +85,7 @@ public class DefaultProjectContext implements ProjectContext{
             audioTrack.addItem(audioClip);
         }
 
-        notifyDrawTimeline(activeTimeline);
+        this.timelineViewModel.setTimeline(activeTimeline);
     }
 
     @Override
@@ -78,7 +96,7 @@ public class DefaultProjectContext implements ProjectContext{
 
     @Override
     public Timeline getActiveTimeline() {
-        return activeTimeline;
+        return currentProject != null ? currentProject.getActiveTimeline() : null;
     }
 
     @Override
@@ -95,7 +113,8 @@ public class DefaultProjectContext implements ProjectContext{
 
     @Override
     public TimelineTrack getVideoTrack() {
-        if (activeTimeline != null) {
+        Timeline activeTimeline = getActiveTimeline();
+        if (activeTimeline != null && !activeTimeline.getTracks().isEmpty()) {
             return activeTimeline.getTracks().getFirst();
         }
 
@@ -104,7 +123,8 @@ public class DefaultProjectContext implements ProjectContext{
 
     @Override
     public TimelineTrack getAudioTrack() {
-        if (activeTimeline != null) {
+        Timeline activeTimeline = getActiveTimeline();
+        if (activeTimeline != null && activeTimeline.getTracks().size() > 1) {
             return activeTimeline.getTracks().get(1);
         }
 
@@ -113,41 +133,7 @@ public class DefaultProjectContext implements ProjectContext{
 
     @Override
     public boolean ensureActiveTimelineExists() {
-        return activeTimeline != null;
-    }
-
-    @Override
-    public void addListener(ProjectContextListener listener) {
-        this.listeners.add(listener);
-    }
-
-    @Override
-    public void removeListener(ProjectContextListener listener) {
-        this.listeners.remove(listener);
-    }
-
-    private void notifyProjectChanged(Project project) {
-        for (ProjectContextListener listener: listeners) {
-            listener.onProjectChanged(project);
-        }
-    }
-
-    private void notifyMediaAssetAdded(MediaAsset asset) {
-        for (var listener: listeners) {
-            listener.onMediaAssetAdded(asset);
-        }
-    }
-
-    private void notifyActiveTimelineAdded(Timeline timeline) {
-        for (var listener: listeners) {
-            listener.onTimelineActivated(timeline);
-        }
-    }
-
-    private void notifyDrawTimeline(Timeline timeline) {
-        for (var listener: listeners) {
-            listener.onDrawTimeline(timeline);
-        }
+        return getActiveTimeline() != null;
     }
 
     private MediaStream getAudioStream(MediaInfo info) {

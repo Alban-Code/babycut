@@ -26,15 +26,11 @@ public class ToolbarController {
 
     @FXML
     private void onPlayTimelineClicked() {
-        if (appController != null) {
-            appController.handlePlayTimeline();
-        }
+
     }
 
     @FXML
     private void onCutClicked() {
-        if (appController != null) {
-            appController.handleCutAtPlayhead();
-        }
+
     }
 }

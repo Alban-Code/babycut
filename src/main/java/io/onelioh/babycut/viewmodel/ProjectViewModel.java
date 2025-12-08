@@ -2,6 +2,7 @@ package io.onelioh.babycut.viewmodel;
 
 import io.onelioh.babycut.model.media.MediaAsset;
 import io.onelioh.babycut.model.project.Project;
+import io.onelioh.babycut.model.timeline.Timeline;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,6 +18,9 @@ public class ProjectViewModel {
 
     private ObservableList<MediaAsset> assets = FXCollections.observableArrayList();
     private ObjectProperty<MediaAsset> currentAsset = new SimpleObjectProperty<>();
+
+    private ObservableList<Timeline> timelines = FXCollections.observableArrayList();
+    private ObjectProperty<Timeline> activeTimeline = new SimpleObjectProperty<>();
 
     // ===================== UTILITAIRES =====================
     public void selectAsset(MediaAsset asset) {
@@ -34,6 +38,8 @@ public class ProjectViewModel {
             this.projectPath.set(project.getPath());
             this.loaded.set(true);
             this.assets.setAll(project.getMediaAssets());
+            this.timelines.setAll(project.getTimelines());
+            this.activeTimeline.set(project.getActiveTimeline());
         } else {
             this.project.set(null);
             this.loaded.set(false);
@@ -41,8 +47,14 @@ public class ProjectViewModel {
             this.projectPath.set(null);
             this.modified.set(false);
             this.assets.clear();
+            this.timelines.clear();
+            this.activeTimeline.set(null);
             this.currentAsset.set(null);
         }
+    }
+
+    public void addTimeline(Timeline timeline) {
+        this.timelines.add(timeline);
     }
 
     public Project getProject() {
@@ -115,5 +127,21 @@ public class ProjectViewModel {
 
     public ObservableList<MediaAsset> getAssets() {
         return assets;
+    }
+
+    public ObservableList<Timeline> getTimelines() {
+        return timelines;
+    }
+
+    public Timeline getActiveTimeline() {
+        return activeTimeline.get();
+    }
+
+    public ObjectProperty<Timeline> activeTimelineProperty() {
+        return activeTimeline;
+    }
+
+    public void setActiveTimeline(Timeline activeTimeline) {
+        this.activeTimeline.set(activeTimeline);
     }
 }

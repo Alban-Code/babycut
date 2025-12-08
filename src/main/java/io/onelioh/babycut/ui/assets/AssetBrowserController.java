@@ -1,5 +1,6 @@
 package io.onelioh.babycut.ui.assets;
 
+import io.onelioh.babycut.core.ProjectContext;
 import io.onelioh.babycut.model.media.MediaAsset;
 import io.onelioh.babycut.viewmodel.ProjectViewModel;
 import javafx.fxml.FXML;
@@ -12,6 +13,7 @@ import java.util.function.Consumer;
 public class AssetBrowserController {
 
     private final ProjectViewModel projectVM;
+    private final ProjectContext projectContext;
 
     @FXML
     private ListView<MediaAsset> assetsListView;
@@ -20,15 +22,17 @@ public class AssetBrowserController {
     private StreamsController streamsViewController;
 
     // Callback définie dans l'orchestrateur (AppController)
-    private Consumer<MediaAsset> onAddToTimelineRequested;
     private Consumer<MediaAsset> onSimpleClicked;
 
-    public AssetBrowserController(ProjectViewModel projectVM) {
+    public AssetBrowserController(ProjectViewModel projectVM, ProjectContext projectContext) {
         this.projectVM = projectVM;
+        this.projectContext = projectContext;
     }
 
     @FXML
     private void initialize() {
+        assetsListView.setItems(projectVM.getAssets());
+
         assetsListView.setCellFactory(list -> new ListCell<>() {
             @Override
             protected void updateItem(MediaAsset item, boolean empty) {
@@ -45,30 +49,20 @@ public class AssetBrowserController {
         assetsListView.getSelectionModel().selectedItemProperty().addListener((obs, old, asset) -> {
             if (asset != null) {
                 streamsViewController.setStreams(asset.getMediaInfo());
-                onSimpleClicked.accept(asset);
+                if (onSimpleClicked != null) {
+                    onSimpleClicked.accept(asset);
+                }
             }
         });
 
         assetsListView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 MediaAsset asset = assetsListView.getSelectionModel().getSelectedItem();
-                if (asset != null && onAddToTimelineRequested != null) {
-                    onAddToTimelineRequested.accept(asset);
+                if (asset != null) {
+                    projectContext.addTimelineItem(asset);
                 }
             }
         });
-    }
-
-    public void setAssets(List<MediaAsset> assets) {
-        assetsListView.getItems().setAll(assets);
-    }
-
-    public void addAsset(MediaAsset asset) {
-        assetsListView.getItems().add(asset);
-    }
-
-    public void setOnAddToTimelineRequested(Consumer<MediaAsset> onAddToTimelineRequested) {
-        this.onAddToTimelineRequested = onAddToTimelineRequested;
     }
 
     public void setOnSimpleClicked(Consumer<MediaAsset> cb) {
@@ -78,8 +72,8 @@ public class AssetBrowserController {
     @FXML
     private void onAddToTimelineClicked() {
         MediaAsset asset = assetsListView.getSelectionModel().getSelectedItem();
-        if (asset != null && onAddToTimelineRequested != null) {
-            onAddToTimelineRequested.accept(asset);
+        if (asset != null) {
+            projectContext.addTimelineItem(asset);
         }
     }
 }

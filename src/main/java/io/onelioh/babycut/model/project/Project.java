@@ -21,6 +21,8 @@ public class Project {
     private List<MediaAsset> mediaAssets = new ArrayList<>();
     private List<Timeline> timelines = new ArrayList<>();
 
+    private Timeline activeTimeline;
+
     public String getName() {
         return name;
     }
@@ -59,6 +61,14 @@ public class Project {
 
     public void addTimeline(Timeline newTimeline) {
         timelines.add(newTimeline);
+    }
+
+    public Timeline getActiveTimeline() {
+        return activeTimeline;
+    }
+
+    public void setActiveTimeline(Timeline activeTimeline) {
+        this.activeTimeline = activeTimeline;
     }
 
 }
