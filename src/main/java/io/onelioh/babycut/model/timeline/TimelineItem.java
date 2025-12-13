@@ -23,5 +23,13 @@ public abstract class TimelineItem {
         return durationMilliseconds + startTime;
     }
 
+    public void setDurationMilliseconds(long durationMilliseconds) {
+        this.durationMilliseconds = durationMilliseconds;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
     public abstract TimelineItemType getItemType();
 }

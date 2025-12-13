@@ -33,4 +33,8 @@ public class ClipItem extends TimelineItem {
     public double getSourceIn() {
         return sourceIn;
     }
+
+    public void setSourceIn(double sourceIn) {
+        this.sourceIn = sourceIn;
+    }
 }

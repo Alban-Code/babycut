@@ -2,16 +2,30 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<ScrollPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="io.onelioh.babycut.ui.timeline.TimelineController"
-            minHeight="0.0"
-            fx:id="timelineScroll"
-            fitToHeight="true"
-            hbarPolicy="ALWAYS"
-            vbarPolicy="NEVER">
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="io.onelioh.babycut.ui.timeline.TimelineController"
+      minHeight="0.0">
+    <!-- Colonne gauche fixe : noms des tracks -->
+    <VBox fx:id="trackLabelsPane"
+          prefWidth="150"
+          minWidth="150"
+          maxWidth="150"
+          spacing="2"
+          style="-fx-background-color: #0f172a; -fx-border-color: #374151; -fx-border-width: 0 1 0 0;">
+        <!-- Les labels seront ajoutés dynamiquement dans rebuildTrackLabels() -->
+    </VBox>
 
-    <StackPane fx:id="timelineRoot"
-               style="-fx-padding: 4;"
-               minHeight="0.0"/>
-</ScrollPane>
+    <!-- Colonne droite : timeline scrollable -->
+    <ScrollPane fx:id="timelineScroll"
+                HBox.hgrow="ALWAYS"
+                minHeight="0.0"
+                fitToHeight="true"
+                hbarPolicy="ALWAYS"
+                vbarPolicy="NEVER">
+
+        <Pane fx:id="timelineRoot"
+              style="-fx-padding: 4; -fx-background-color: transparent;"
+              minHeight="0.0"/>
+    </ScrollPane>
+</HBox>

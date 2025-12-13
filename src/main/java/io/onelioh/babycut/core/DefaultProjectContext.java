@@ -74,18 +74,31 @@ public class DefaultProjectContext implements ProjectContext {
         TimelineTrack videoTrack = activeTimeline.getTracks().getFirst();
         TimelineTrack audioTrack = activeTimeline.getTracks().get(1);
 
+        // Créer et ajouter les clips au model, en gardant les références
+        ClipItem videoClip = null;
+        ClipItem audioClip = null;
+
         if (!info.getVideoStreams().isEmpty()) {
-            ClipItem videoClip = new ClipItem(insertionTime, 0.0, duration, asset);
+            videoClip = new ClipItem(insertionTime, 0.0, duration, asset);
             videoTrack.addItem(videoClip);
         }
 
         MediaStream primaryAudio = getAudioStream(info);
         if (primaryAudio != null) {
-            ClipItem audioClip = new ClipItem(insertionTime, 0.0, duration, asset);
+            audioClip = new ClipItem(insertionTime, 0.0, duration, asset);
             audioTrack.addItem(audioClip);
         }
 
-        this.timelineViewModel.setTimeline(activeTimeline);
+        // Mettre à jour timelineEnd AVANT d'ajouter au ViewModel
+        this.timelineViewModel.setTimelineEnd(activeTimeline.getTimelineEnd());
+
+        // Maintenant ajouter au ViewModel (déclenche rebuildUI avec le bon timelineEnd)
+        if (videoClip != null) {
+            this.timelineViewModel.addClipToTrack(0, videoClip);
+        }
+        if (audioClip != null) {
+            this.timelineViewModel.addClipToTrack(1, audioClip);
+        }
     }
 
     @Override

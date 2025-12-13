@@ -25,7 +25,7 @@ public class AppFactory implements Callback<Class<?>, Object> {
 
     private final ProjectViewModel projectVM = new ProjectViewModel();
     private final TimelineViewModel timelineVM = new TimelineViewModel();
-    private final PlaybackViewModel assetVM = new PlaybackViewModel();
+    private final PlaybackViewModel assetPlaybackVM = new PlaybackViewModel();
     private final PlaybackViewModel timelinePlaybackVM = new PlaybackViewModel();
 
     private final ProjectContext projectContext = new DefaultProjectContext(projectVM, timelineVM);
@@ -44,7 +44,7 @@ public class AppFactory implements Callback<Class<?>, Object> {
 
     private AssetPlayback getAssetCoordinator() {
         if (assetCoordinator == null) {
-            assetCoordinator = new AssetPlaybackCoordinator(assetVM, playerFactory, null);
+            assetCoordinator = new AssetPlaybackCoordinator(assetPlaybackVM, playerFactory, null);
             wireExclusivity();
         }
         return assetCoordinator;
@@ -60,11 +60,11 @@ public class AppFactory implements Callback<Class<?>, Object> {
     @Override
     public Object call(Class<?> param) {
         if (param == AppController.class) {
-            return new AppController(this.projectContext, this.mediaProber, getAssetCoordinator(), assetVM, getTimelineCoordinator(), timelinePlaybackVM);
+            return new AppController(this.projectContext, this.mediaProber, getAssetCoordinator(), assetPlaybackVM, getTimelineCoordinator(), timelinePlaybackVM);
         }
 
         if (param == PlayerController.class) {
-            return new PlayerController(getAssetCoordinator(), this.assetVM);
+            return new PlayerController(getAssetCoordinator(), this.assetPlaybackVM);
         }
 
         if (param == AssetBrowserController.class) {

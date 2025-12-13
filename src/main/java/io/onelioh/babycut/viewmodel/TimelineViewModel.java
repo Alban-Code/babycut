@@ -41,7 +41,8 @@ public class TimelineViewModel {
 
     // ===================== AFFICHAGE =====================
 
-    private DoubleProperty pixelsPerSecond = new SimpleDoubleProperty(80.0);
+    private long maxTimelineDuration = 3_600_000L;
+    private DoubleProperty pixelsPerSecond = new SimpleDoubleProperty(30.0);
     private DoubleProperty scroll = new SimpleDoubleProperty(0.0);
     private LongProperty playheadPosition = new SimpleLongProperty(0);
 
@@ -50,7 +51,17 @@ public class TimelineViewModel {
     private BooleanProperty modified = new SimpleBooleanProperty(false);
     private LongProperty timelineEnd = new SimpleLongProperty(0);
 
+     // ===================== DIRTY FLAG =====================
+     private BooleanProperty needsRefresh = new SimpleBooleanProperty(false);
+
     // ===================== COMMANDES =====================
+    public void addClipToTrack(int trackIndex, ClipItem clip) {
+        if (trackIndex >= 0 && trackIndex < tracks.size()) {
+            tracks.get(trackIndex).getItems().add(clip);
+            markAsModified();
+            markDirty();
+        }
+    }
 
 
     // ===================== UTILITAIRES =====================
@@ -68,8 +79,12 @@ public class TimelineViewModel {
         this.modified.set(true);
     }
 
+    public void markDirty() {
+        this.needsRefresh.set(!this.needsRefresh.get());
+    }
 
-    // ===================== GETTERS/SETTERS Timeline =====================
+
+    // ===================== GETTERS/SETTERS =====================
 
     public Timeline getTimeline() {
         return timeline.get();
@@ -108,6 +123,7 @@ public class TimelineViewModel {
 
     public void selectClip(ClipItem selected) {
         this.selected.set(selected);
+        this.markDirty();
     }
 
     public double getPixelsPerSecond() {
@@ -180,5 +196,17 @@ public class TimelineViewModel {
 
     public void setTimelineEnd(long timelineEnd) {
         this.timelineEnd.set(timelineEnd);
+    }
+
+    public BooleanProperty needsRefreshProperty() {
+        return needsRefresh;
+    }
+
+    public long getMaxTimelineDuration() {
+        return this.maxTimelineDuration;
+    }
+
+    public void setMaxTimelineDuration(long durationMs) {
+        this.maxTimelineDuration = durationMs;
     }
 }
