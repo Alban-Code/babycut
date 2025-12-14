@@ -24,10 +24,16 @@ public abstract class TimelineItem {
     }
 
     public void setDurationMilliseconds(long durationMilliseconds) {
+        if (durationMilliseconds < 0L) {
+            throw new IllegalArgumentException("duration cannot be negative, got: " + durationMilliseconds);
+        }
         this.durationMilliseconds = durationMilliseconds;
     }
 
     public void setStartTime(long startTime) {
+        if (startTime < 0L) {
+            throw new IllegalArgumentException("startTime cannot be negative, got: " + startTime);
+        }
         this.startTime = startTime;
     }
 
