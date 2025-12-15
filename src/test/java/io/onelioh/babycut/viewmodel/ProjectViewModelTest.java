@@ -67,7 +67,7 @@ class ProjectViewModelTest extends JavaFXTestBase {
         viewModel.setProject(project);
 
         // Sélectionner un asset pour vérifier la réinitialisation
-        MediaAsset asset = viewModel.getAssets().get(0);
+        MediaAsset asset = viewModel.getAssets().getFirst();
         viewModel.selectAsset(asset);
 
         // ACT : Réinitialiser avec null

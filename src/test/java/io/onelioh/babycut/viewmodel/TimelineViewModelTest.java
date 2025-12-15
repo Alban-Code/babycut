@@ -2,7 +2,6 @@ package io.onelioh.babycut.viewmodel;
 
 import io.onelioh.babycut.model.timeline.ClipItem;
 import io.onelioh.babycut.model.timeline.Timeline;
-import io.onelioh.babycut.model.timeline.TimelineTrack;
 import io.onelioh.babycut.model.timeline.TrackType;
 import io.onelioh.babycut.utils.JavaFXTestBase;
 import io.onelioh.babycut.utils.TestFixtures;
@@ -10,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class TimelineViewModelTest extends JavaFXTestBase {
 
