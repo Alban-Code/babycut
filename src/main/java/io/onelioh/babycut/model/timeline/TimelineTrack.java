@@ -31,4 +31,12 @@ public class TimelineTrack {
     public void addItem(TimelineItem newItem) {
         items.add(newItem);
     }
+
+    public void removeItem(TimelineItem item) {
+        this.items.remove(item);
+    }
+
+    public void addItem(int index, TimelineItem newItem) {
+        this.items.add(index, newItem);
+    }
 }

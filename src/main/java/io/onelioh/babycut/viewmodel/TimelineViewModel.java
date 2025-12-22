@@ -63,6 +63,13 @@ public class TimelineViewModel {
         }
     }
 
+    public void deleteClipFromTrack(TrackViewModel track, ClipItem clip) {
+        // Suppression dans le VM
+        track.getItems().remove(clip);
+        // Suppression dans le model
+        track.getTrack().removeItem(clip);
+    }
+
 
     // ===================== UTILITAIRES =====================
     public void zoomIn() {
